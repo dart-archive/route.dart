@@ -4,7 +4,7 @@ version: 0.4.12
 authors:
 - Justin Fagnani <justinfagnani@google.com>
 - Pavel Jbanov <pavelj@google.com>
-homepage: https://github.com/dart-lang/route/tree/experimental_hierarchical
+homepage: https://github.com/angular/route.dart
 
 dependencies:
   browser: any
