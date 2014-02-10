@@ -15,7 +15,7 @@ main() {
     router.root.addRoute(
         name: 'foo',
         path: '/foo',
-        enter: expectAsync1((RouteEvent e) {
+        enter: expectAsync((RouteEvent e) {
           expect(e.path, '/foo');
           expect(router.root.getRoute('foo').isActive, isTrue);
         }));
@@ -34,7 +34,7 @@ main() {
       router.root.addRoute(
           name: 'parent',
           path: parentPath,
-          enter: expectAsync1((RouteEvent e) {
+          enter: expectAsync((RouteEvent e) {
             expect(e.path, expectedParentPath);
             expect(e.route, isNotNull);
             expect(e.route.name, 'parent');
@@ -43,7 +43,7 @@ main() {
             child.addRoute(
                 name: 'child',
                 path: childPath,
-                enter: expectAsync1((RouteEvent e) {
+                enter: expectAsync((RouteEvent e) {
                   expect(e.path, expectedChildPath);
                 }));
           });
@@ -115,7 +115,7 @@ main() {
         'bazLeave': 0
       });
 
-      router.route('/foo/bar').then(expectAsync1((_) {
+      router.route('/foo/bar').then(expectAsync((_) {
         expect(counters, {
           'fooPreEnter': 1,
           'fooEnter': 1,
@@ -128,7 +128,7 @@ main() {
           'bazLeave': 0
         });
 
-        router.route('/foo/baz').then(expectAsync1((_) {
+        router.route('/foo/baz').then(expectAsync((_) {
           expect(counters, {
             'fooPreEnter': 1,
             'fooEnter': 1,
@@ -159,10 +159,10 @@ main() {
               ..addRoute(name: 'baz', path: '/baz',
                   enter: (RouteEnterEvent e) => bazEntered = true));
 
-      router.route('/foo/bar').then(expectAsync1((_) {
+      router.route('/foo/bar').then(expectAsync((_) {
         expect(barEntered, true);
         expect(bazEntered, false);
-        router.route('/foo/baz').then(expectAsync1((_) {
+        router.route('/foo/baz').then(expectAsync((_) {
           expect(bazEntered, allowLeave);
         }));
         completer.complete(allowLeave);
@@ -193,7 +193,7 @@ main() {
                   preEnter: (RoutePreEnterEvent e) =>
                       e.allowEnter(completer.future)));
 
-      router.route('/foo/bar').then(expectAsync1((_) {
+      router.route('/foo/bar').then(expectAsync((_) {
         expect(barEntered, allowEnter);
       }));
       completer.complete(allowEnter);
@@ -217,7 +217,7 @@ main() {
             name: 'foo',
             path: '/foo',
             defaultRoute: true,
-            enter: expectAsync1((RouteEvent e) {
+            enter: expectAsync((RouteEvent e) {
               expect(e.path, expectFoo);
             }),
             mount: (child) => child
@@ -225,7 +225,7 @@ main() {
                   name: 'bar',
                   path: '/bar',
                   defaultRoute: true,
-                  enter: expectAsync1((RouteEvent e) =>
+                  enter: expectAsync((RouteEvent e) =>
                       expect(e.path, expectBar))));
 
       router.route(path);
@@ -335,7 +335,7 @@ main() {
             name: 'articles',
             path: '/articles');
 
-      router.go('articles', {}).then(expectAsync1((_) {
+      router.go('articles', {}).then(expectAsync((_) {
         var mockLocation = mockWindow.location;
 
         mockLocation.getLogs(callsTo('assign', anything))
@@ -345,7 +345,7 @@ main() {
         mockLocation.getLogs(callsTo('replace', anything))
             .verify(happenedExactly(0));
 
-        router.go('articles', {}, replace: true).then(expectAsync1((_) {
+        router.go('articles', {}, replace: true).then(expectAsync((_) {
           mockLocation.getLogs(callsTo('replace', anything))
               .verify(happenedExactly(1));
           expect(mockLocation.getLogs(callsTo('replace', anything)).last.args,
@@ -364,7 +364,7 @@ main() {
             name: 'articles',
             path: '/articles');
 
-      router.go('articles', {}).then(expectAsync1((_) {
+      router.go('articles', {}).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
 
         mockHistory.getLogs(callsTo('pushState', anything))
@@ -374,7 +374,7 @@ main() {
         mockHistory.getLogs(callsTo('replaceState', anything))
             .verify(happenedExactly(0));
 
-        router.go('articles', {}, replace: true).then(expectAsync1((_) {
+        router.go('articles', {}, replace: true).then(expectAsync((_) {
           mockHistory.getLogs(callsTo('replaceState', anything))
               .verify(happenedExactly(1));
           expect(mockHistory.getLogs(callsTo('replaceState', anything)).last.args,
@@ -399,7 +399,7 @@ main() {
 
       var routeA = router.root.getRoute('a');
 
-      router.go('a.b', {}).then(expectAsync1((_) {
+      router.go('a.b', {}).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
 
         mockHistory.getLogs(callsTo('pushState', anything))
@@ -407,14 +407,14 @@ main() {
         expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
             [null, '', '/null/null']);
 
-        router.go('a.b', {'foo': 'aaaa', 'bar': 'bbbb'}).then(expectAsync1((_) {
+        router.go('a.b', {'foo': 'aaaa', 'bar': 'bbbb'}).then(expectAsync((_) {
           mockHistory.getLogs(callsTo('pushState', anything))
               .verify(happenedExactly(2));
           expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
               [null, '', '/aaaa/bbbb']);
 
           router.go('b', {'bar': 'bbbb'}, startingFrom: routeA)
-              .then(expectAsync1((_) {
+              .then(expectAsync((_) {
                 mockHistory.getLogs(callsTo('pushState', anything))
                    .verify(happenedExactly(3));
                 expect(
@@ -565,7 +565,7 @@ main() {
         ..addRoute(
             name: 'foo',
             path: '/:foo',
-            enter: expectAsync1((RouteEvent e) {
+            enter: expectAsync((RouteEvent e) {
               expect(e.parameters, {
                 'foo': '123',
                 'a': 'b',
