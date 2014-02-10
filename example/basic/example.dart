@@ -10,27 +10,27 @@ main() {
     ..level = Level.FINEST
     ..onRecord.listen((r) => print('[${r.level}] ${r.message}'));
 
-  query('#warning').remove();
+  querySelector('#warning').remove();
 
   var router = new Router(useFragment: true);
   router.root
     ..addRoute(name: 'one', defaultRoute: true, path: '/one', enter: showOne)
     ..addRoute(name: 'two', path: '/two', enter: showTwo);
 
-  query('#linkOne').attributes['href'] = router.url('one');
-  query('#linkTwo').attributes['href'] = router.url('two');
+  querySelector('#linkOne').attributes['href'] = router.url('one');
+  querySelector('#linkTwo').attributes['href'] = router.url('two');
 
   router.listen();
 }
 
 void showOne(RouteEvent e) {
   print("showOne");
-  query('#one').classes.add('selected');
-  query('#two').classes.remove('selected');
+  querySelector('#one').classes.add('selected');
+  querySelector('#two').classes.remove('selected');
 }
 
 void showTwo(RouteEvent e) {
   print("showTwo");
-  query('#one').classes.remove('selected');
-  query('#two').classes.add('selected');
+  querySelector('#one').classes.remove('selected');
+  querySelector('#two').classes.add('selected');
 }
