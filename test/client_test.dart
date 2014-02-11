@@ -11,7 +11,7 @@ main() {
   unittestConfiguration.timeout = new Duration(seconds: 1);
 
   test('paths are routed to routes added with addRoute', () {
-    Router router = new Router();
+    var router = new Router();
     router.root.addRoute(
         name: 'foo',
         path: '/foo',
@@ -184,13 +184,13 @@ main() {
 
   group('hierarchical routing', () {
 
-    _testParentChild(
+    void _testParentChild(
         Pattern parentPath,
         Pattern childPath,
         String expectedParentPath,
         String expectedChildPath,
         String testPath) {
-      Router router = new Router();
+      var router = new Router();
       router.root.addRoute(
           name: 'parent',
           path: parentPath,
@@ -233,7 +233,7 @@ main() {
   group('leave', () {
 
     test('should leave previous route and enter new', () {
-      Map<String, int> counters = <String, int>{
+      var counters = <String, int>{
         'fooPreEnter': 0,
         'fooEnter': 0,
         'fooLeave': 0,
@@ -244,24 +244,24 @@ main() {
         'bazEnter': 0,
         'bazLeave': 0
       };
-      Router router = new Router();
+      var router = new Router();
       router.root
         ..addRoute(path: '/foo',
             name: 'foo',
-            preEnter: (RouteEvent e) => counters['fooPreEnter']++,
-            enter: (RouteEvent e) => counters['fooEnter']++,
-            leave: (RouteEvent e) => counters['fooLeave']++,
+            preEnter: (_) => counters['fooPreEnter']++,
+            enter: (_) => counters['fooEnter']++,
+            leave: (_) => counters['fooLeave']++,
             mount: (Route route) => route
               ..addRoute(path: '/bar',
                   name: 'bar',
-                  preEnter: (RouteEvent e) => counters['barPreEnter']++,
-                  enter: (RouteEvent e) => counters['barEnter']++,
-                  leave: (RouteEvent e) => counters['barLeave']++)
+                  preEnter: (_) => counters['barPreEnter']++,
+                  enter: (_) => counters['barEnter']++,
+                  leave: (_) => counters['barLeave']++)
               ..addRoute(path: '/baz',
                   name: 'baz',
-                  preEnter: (RouteEvent e) => counters['bazPreEnter']++,
-                  enter: (RouteEvent e) => counters['bazEnter']++,
-                  leave: (RouteEvent e) => counters['bazLeave']++));
+                  preEnter: (_) => counters['bazPreEnter']++,
+                  enter: (_) => counters['bazEnter']++,
+                  leave: (_) => counters['bazLeave']++));
 
       expect(counters, {
         'fooPreEnter': 0,
@@ -304,12 +304,12 @@ main() {
       }));
     });
 
-    _testAllowLeave(bool allowLeave) {
-      Completer<bool> completer = new Completer<bool>();
+    void _testAllowLeave(bool allowLeave) {
+      var completer = new Completer<bool>();
       bool barEntered = false;
       bool bazEntered = false;
 
-      Router router = new Router();
+      var router = new Router();
       router.root
         ..addRoute(name: 'foo', path: '/foo',
             mount: (Route child) => child
@@ -340,11 +340,11 @@ main() {
 
   group('preEnter', () {
 
-    _testAllowEnter(bool allowEnter) {
-      Completer<bool> completer = new Completer<bool>();
+    void _testAllowEnter(bool allowEnter) {
+      var completer = new Completer<bool>();
       bool barEntered = false;
 
-      Router router = new Router();
+      var router = new Router();
       router.root
         ..addRoute(name: 'foo', path: '/foo',
             mount: (Route child) => child
@@ -370,8 +370,8 @@ main() {
 
   group('Default route', () {
 
-    _testHeadTail(String path, String expectFoo, String expectBar) {
-      Router router = new Router();
+    void _testHeadTail(String path, String expectFoo, String expectBar) {
+      var router = new Router();
       router.root
         ..addRoute(
             name: 'foo',
@@ -412,14 +412,14 @@ main() {
     });
 
     test('should follow default routes', () {
-      Map<String, int> counters = <String, int>{
+      var counters = <String, int>{
         'list_entered': 0,
         'article_123_entered': 0,
         'article_123_view_entered': 0,
         'article_123_edit_entered': 0
       };
 
-      Router router = new Router();
+      var router = new Router();
       router.root
         ..addRoute(
             name: 'articles',
@@ -487,13 +487,10 @@ main() {
 
   group('go', () {
 
-    test('shoud location.assign/replace when useFragment=true', () {
-      MockWindow mockWindow = new MockWindow();
-      Router router = new Router(useFragment: true, windowImpl: mockWindow);
-      router.root
-        ..addRoute(
-            name: 'articles',
-            path: '/articles');
+    test('shoud use location.assign/.replace when useFragment=true', () {
+      var mockWindow = new MockWindow();
+      var router = new Router(useFragment: true, windowImpl: mockWindow);
+      router.root.addRoute(name: 'articles', path: '/articles');
 
       router.go('articles', {}).then(expectAsync((_) {
         var mockLocation = mockWindow.location;
@@ -516,13 +513,10 @@ main() {
       }));
     });
 
-    test('shoud history.push/replaceState when useFragment=false', () {
-      MockWindow mockWindow = new MockWindow();
-      Router router = new Router(useFragment: false, windowImpl: mockWindow);
-      router.root
-        ..addRoute(
-            name: 'articles',
-            path: '/articles');
+    test('shoud use history.push/.replaceState when useFragment=false', () {
+      var mockWindow = new MockWindow();
+      var router = new Router(useFragment: false, windowImpl: mockWindow);
+      router.root.addRoute(name: 'articles', path: '/articles');
 
       router.go('articles', {}).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
@@ -546,8 +540,8 @@ main() {
     });
 
     test('should work with hierarchical go', () {
-      MockWindow mockWindow = new MockWindow();
-      Router router = new Router(windowImpl: mockWindow);
+      var mockWindow = new MockWindow();
+      var router = new Router(windowImpl: mockWindow);
       router.root
         ..addRoute(
             name: 'a',
@@ -581,20 +575,19 @@ main() {
                     mockHistory.getLogs(callsTo('pushState')).last.args,
                     [null, '', '/aaaa/bbbb']);
               }));
-
         }));
       }));
 
     });
 
     test('should attempt to reverse default routes', () {
-      Map<String, int> counters = <String, int>{
+      var counters = <String, int>{
         'aEnter': 0,
         'bEnter': 0
       };
 
-      MockWindow mockWindow = new MockWindow();
-      Router router = new Router(windowImpl: mockWindow);
+      var mockWindow = new MockWindow();
+      var router = new Router(windowImpl: mockWindow);
       router.root
         ..addRoute(
             name: 'a',
@@ -636,8 +629,8 @@ main() {
   group('url', () {
 
     test('should reconstruct url', () {
-      MockWindow mockWindow = new MockWindow();
-      Router router = new Router(windowImpl: mockWindow);
+      var mockWindow = new MockWindow();
+      var router = new Router(windowImpl: mockWindow);
       router.root
         ..addRoute(
             name: 'a',
@@ -679,7 +672,7 @@ main() {
     test('should return correct routes', () {
       Route routeFoo, routeBar, routeBaz, routeQux, routeAux;
 
-      Router router = new Router();
+      var router = new Router();
       router.root
         ..addRoute(
             name: 'foo',
@@ -720,7 +713,7 @@ main() {
   group('route', () {
 
     test('should parse query', () {
-      Router router = new Router();
+      var router = new Router();
       router.root
         ..addRoute(
             name: 'foo',
@@ -740,7 +733,7 @@ main() {
     group('isActive', () {
 
       test('should currectly identify active/inactive routes', () {
-        Router router = new Router();
+        var router = new Router();
         router.root
           ..addRoute(
               name: 'foo',
@@ -795,7 +788,7 @@ main() {
     group('parameters', () {
 
       test('should return path parameters for routes', () {
-        Router router = new Router();
+        var router = new Router();
         router.root
           ..addRoute(
               name: 'foo',
@@ -840,7 +833,7 @@ main() {
   group('activePath', () {
 
     test('should currectly identify active path', () {
-      Router router = new Router();
+      var router = new Router();
       router.root
         ..addRoute(
             name: 'foo',
