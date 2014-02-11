@@ -7,15 +7,16 @@ import 'package:route_hierarchical/client.dart';
 
 main() {
   new Logger('')
-    ..level = Level.FINEST
-    ..onRecord.listen((r) => print('[${r.level}] ${r.message}'));
+      ..level = Level.FINEST
+      ..onRecord.listen((r) => print('[${r.level}] ${r.message}'));
 
   querySelector('#warning').remove();
 
   var router = new Router(useFragment: true);
+
   router.root
-    ..addRoute(name: 'one', defaultRoute: true, path: '/one', enter: showOne)
-    ..addRoute(name: 'two', path: '/two', enter: showTwo);
+      ..addRoute(name: 'one', defaultRoute: true, path: '/one', enter: showOne)
+      ..addRoute(name: 'two', path: '/two', enter: showTwo);
 
   querySelector('#linkOne').attributes['href'] = router.url('one');
   querySelector('#linkTwo').attributes['href'] = router.url('two');
