@@ -18,6 +18,7 @@ import 'url_template.dart';
 
 
 final _logger = new Logger('route');
+final _pathSeparator = '.';
 
 typedef RoutePreEnterEventHandler(RoutePreEnterEvent path);
 typedef RouteEnterEventHandler(RouteEnterEvent path);
@@ -177,6 +178,9 @@ class Route {
     if (name == null) {
       throw new ArgumentError('name is required for all routes');
     }
+    if (name.contains(_pathSeparator)) {
+      throw new ArgumentError('name cannot contain dot.');
+    }
     if (_routes.containsKey(name)) {
       throw new ArgumentError('Route $name already exists');
     }
@@ -221,7 +225,7 @@ class Route {
    * dot delimited string of route names.
    */
   Route getRoute(String routePath) {
-    var routeName = routePath.split('.').first;
+    var routeName = routePath.split(_pathSeparator).first;
     if (!_routes.containsKey(routeName)) {
       _logger.warning('Invalid route name: $routeName $_routes');
       return null;
