@@ -86,7 +86,7 @@ main() {
             expect(router.root.getRoute('paramaddress').isActive, isTrue);
           }))
         ..addRoute(
-          name: 'param.add',
+          name: 'param_add',
           path: '/:aaaaaa/add',
           enter: (e) => fail('should invoke /foo/address'));
       return router.route('/foo/address');

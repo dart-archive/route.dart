@@ -410,6 +410,7 @@ class Router {
   final Route root;
   final StreamController<RouteStartEvent> _onRouteStart =
       new StreamController<RouteStartEvent>.broadcast(sync: true);
+  final bool sortRoutes;
   bool _listen = false;
 
   /**
@@ -418,11 +419,13 @@ class Router {
    * value is null which then determines the behavior based on
    * [History.supportsState].
    */
-  Router({bool useFragment, Window windowImpl})
-      : this._init(null, useFragment: useFragment, windowImpl: windowImpl);
+  Router({bool useFragment, Window windowImpl, bool sortRoutes: true})
+      : this._init(null, useFragment: useFragment, windowImpl: windowImpl,
+          sortRoutes: sortRoutes);
 
 
-  Router._init(Router parent, {bool useFragment, Window windowImpl})
+  Router._init(Router parent, {bool useFragment, Window windowImpl,
+      this.sortRoutes})
       : _useFragment = (useFragment == null)
             ? !History.supportsState
             : useFragment,
@@ -519,9 +522,11 @@ class Router {
   }
 
   List _matchingRoutes(String path, Route baseRoute) {
-    return (baseRoute._routes.values.toList()
-      ..sort((r1, r2) => r1.path.compareTo(r2.path)))
-      .where((r) => r.path.match(path) != null).toList();
+    var routes = baseRoute._routes.values.toList();
+    if (sortRoutes) {
+      routes.sort((r1, r2) => r1.path.compareTo(r2.path));
+    }
+    return routes.where((r) => r.path.match(path) != null).toList();
   }
 
   Iterable<_Match> _matchingTreePath(String path, Route baseRoute) {
