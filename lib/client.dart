@@ -444,9 +444,9 @@ class Router {
     var preEnterFutures = _preEnter(tail, treePath);
 
     return Future.wait(preEnterFutures).then((List<bool> results) {
-      return results.fold(true, (a, b) => a && b)
-          ? _processNewRoute(cmpBase, treePath, tail)
-          : false;
+      return results.any((v) => v == false)
+          ? false
+          : _processNewRoute(cmpBase, treePath, tail);
     });
   }
 
