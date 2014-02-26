@@ -8,11 +8,9 @@ import 'dart:html';
 import 'package:unittest/mock.dart';
 
 class MockWindow extends Mock implements Window {
-  MockHistory history = new MockHistory();
-  MockLocation location = new MockLocation();
-  MockDocument document = new MockDocument();
-
-  noSuchMethod(_) => super.noSuchMethod(_);
+  final history = new MockHistory();
+  final location = new MockLocation();
+  final document = new MockDocument();
 }
 
 class MockHistory extends Mock implements History {
@@ -25,16 +23,14 @@ class MockHistory extends Mock implements History {
   void replaceState(Object data, String title, [String url]) {
     log.add(new LogEntry(name, 'replaceState', [data, title, url], Action.IGNORE));
   }
-  noSuchMethod(_) => super.noSuchMethod(_);
 }
 
 class MockLocation extends Mock implements Location {
-  noSuchMethod(_) => super.noSuchMethod(_);
 }
 
 class MockDocument extends Mock implements HtmlDocument {
   //TODO(pavelgj): ugly hack for making tests run in dart2js
-  set title(String title) =>
-      log.add(new LogEntry(name, '=title', [title], Action.IGNORE));
-  noSuchMethod(_) => super.noSuchMethod(_);
+  set title(String title) {
+    log.add(new LogEntry(name, '=title', [title], Action.IGNORE));
+  }
 }
