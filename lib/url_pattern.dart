@@ -284,11 +284,23 @@ class UrlPattern implements UrlMatcher, Pattern {
     _regex = new RegExp(sb.toString());
   }
 
-  _setBasePattern(String basePattern) {
+  void _setBasePattern(String basePattern) {
     if (_hasFragment == true) {
       throw new ArgumentError('multiple # characters');
     }
     _hasFragment = true;
     _baseRegex = new RegExp('$basePattern\$');
+  }
+
+  Match matchAsPrefix(String string, [int start = 0]) {
+    throw new UnimplementedError('matchAsPrefix is not implemented');
+  }
+
+  List<String> urlParameterNames() {
+    throw new UnimplementedError('urlParameterNames is not implemented');
+  }
+
+  int compareTo(Comparable another) {
+    throw new UnimplementedError('compareTo is not implemented');
   }
 }

@@ -106,7 +106,7 @@ class RouteHandle implements Route {
   String reverse(String tail) =>
       _assertState(() => _getHost(_route).reverse(tail));
 
-  dynamic _assertState([Function f()]) {
+  dynamic _assertState([f()]) {
     if (_route == null) {
       throw new StateError('This route handle is already discated.');
     }
