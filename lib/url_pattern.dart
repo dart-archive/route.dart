@@ -300,7 +300,7 @@ class UrlPattern implements UrlMatcher, Pattern {
     throw new UnimplementedError('urlParameterNames is not implemented');
   }
 
-  int compareTo(Comparable another) {
+  int compareTo(UrlMatcher another) {
     throw new UnimplementedError('compareTo is not implemented');
   }
 }

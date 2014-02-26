@@ -30,7 +30,7 @@ abstract class UrlMatcher extends Comparable {
    * * zero if this matcher and another can be tested in no particular order.
    * * positive if this matcher should be tested after another.
    */
-  int compareTo(Comparable another) => 0;
+  int compareTo(UrlMatcher other) => 0;
 }
 
 /**

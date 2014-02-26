@@ -14,30 +14,28 @@ class UrlTemplate implements UrlMatcher {
   RegExp _pattern;
   List _chunks;
 
-  String toString() {
-    return '$_pattern';
-  }
+  String toString() => '$_pattern';
 
-  int compareTo(Comparable matcher) {
+  int compareTo(UrlMatcher other) {
     final String tmpParamPattern = '\t';
-    if (matcher is UrlTemplate) {
+    if (other is UrlTemplate) {
       String thisPattern = _pattern.pattern.replaceAll(_paramPattern, tmpParamPattern);
-      String thatPattern = matcher._pattern.pattern.replaceAll(_paramPattern, tmpParamPattern);
+      String otherPattern = other._pattern.pattern.replaceAll(_paramPattern, tmpParamPattern);
       List<String> thisPatternParts = thisPattern.split('/');
-      List<String> thatPatternParts = thatPattern.split('/');
-      if (thisPatternParts.length == thatPatternParts.length) {
+      List<String> otherPatternParts = otherPattern.split('/');
+      if (thisPatternParts.length == otherPatternParts.length) {
         for (int i = 0; i < thisPatternParts.length; i++) {
           String thisPart = thisPatternParts[i];
-          String thatPart = thatPatternParts[i];
-          if (thisPart == tmpParamPattern && thatPart != tmpParamPattern) {
+          String otherPart = otherPatternParts[i];
+          if (thisPart == tmpParamPattern && otherPart != tmpParamPattern) {
             return 1;
-          } else if (thisPart != tmpParamPattern && thatPart == tmpParamPattern) {
+          } else if (thisPart != tmpParamPattern && otherPart == tmpParamPattern) {
             return -1;
           }
         }
-        return thatPattern.compareTo(thisPattern);
+        return otherPattern.compareTo(thisPattern);
       } else {
-        return thatPatternParts.length - thisPatternParts.length;
+        return otherPatternParts.length - thisPatternParts.length;
       }
     } else {
       return 0;
@@ -76,9 +74,7 @@ class UrlTemplate implements UrlMatcher {
 
   UrlMatch match(String url) {
     var matches = _pattern.allMatches(url);
-    if (matches.isEmpty) {
-      return null;
-    }
+    if (matches.isEmpty) return null;
     var parameters = new Map();
     Match match = matches.first;
     for (var i = 0; i < match.groupCount; i++) {
@@ -91,7 +87,5 @@ class UrlTemplate implements UrlMatcher {
   String reverse({Map parameters, String tail: ''}) =>
     _chunks.map((c) => c is Function ? c(parameters) : c).join() + tail;
 
-  List<String> urlParameterNames() {
-    return _fields;
-  }
+  List<String> urlParameterNames() => _fields;
 }
