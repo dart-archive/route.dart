@@ -252,10 +252,9 @@ class Route {
     });
   }
 
-  Map _joinParams(Map parameters, RouteEvent lastEvent) {
-    if (lastEvent == null) return parameters;
-    return new Map.from(lastEvent.parameters)..addAll(parameters);
-  }
+  Map _joinParams(Map parameters, RouteEvent lastEvent) => lastEvent == null
+      ? parameters
+      : new Map.from(lastEvent.parameters)..addAll(parameters);
 
   String toString() =>  '[Route: $name]';
 
@@ -311,6 +310,9 @@ class RoutePreEnterEvent extends RouteEvent {
 
   RoutePreEnterEvent(path, parameters, route)  : super(path, parameters, route);
 
+  RoutePreEnterEvent._fromMatch(_Match m)
+      : this(m.urlMatch.tail, m.urlMatch.parameters, m.route);
+
   /**
    * Can be called on enter with the future which will complete with a boolean
    * value allowing (true) or disallowing (false) the current navigation.
@@ -323,6 +325,9 @@ class RoutePreEnterEvent extends RouteEvent {
 class RouteEnterEvent extends RouteEvent {
 
   RouteEnterEvent(path, parameters, route)  : super(path, parameters, route);
+
+  RouteEnterEvent._fromMatch(_Match m)
+      : this(m.urlMatch.match, m.urlMatch.parameters, m.route);
 }
 
 class RouteLeaveEvent extends RouteEvent {
@@ -448,9 +453,7 @@ class Router {
   List<Future<bool>> _preEnter(String tail, Iterable<_Match> treePath) {
     var preEnterFutures = <Future<bool>>[];
     treePath.forEach((_Match matchedRoute) {
-      tail = matchedRoute.urlMatch.tail;
-      var preEnterEvent = new RoutePreEnterEvent(tail,
-          matchedRoute.urlMatch.parameters, matchedRoute.route);
+      var preEnterEvent = new RoutePreEnterEvent._fromMatch(matchedRoute);
       matchedRoute.route._onPreEnterController.add(preEnterEvent);
       preEnterFutures.addAll(preEnterEvent._allowEnterFutures);
     });
@@ -462,11 +465,8 @@ class Router {
     return _leaveOldRoutes(startingFrom, treePath).then((bool allowed) {
       if (allowed) {
         var base = startingFrom;
-        var tail;
         treePath.forEach((_Match matchedRoute) {
-          tail = matchedRoute.urlMatch.tail;
-          var event = new RouteEnterEvent(matchedRoute.urlMatch.match,
-              matchedRoute.urlMatch.parameters, matchedRoute.route);
+          var event = new RouteEnterEvent._fromMatch(matchedRoute);
           _unsetAllCurrentRoutes(base);
           base._currentRoute = matchedRoute.route;
           base._currentRoute._lastEvent = event;
