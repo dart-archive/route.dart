@@ -177,9 +177,9 @@ class Route {
 
     var route = new Route._new(name: name, path: matcher, parent: this);
 
-    if (preEnter != null) route.onPreEnter.listen(preEnter);
-    if (enter != null) route.onEnter.listen(enter);
-    if (leave != null) route.onLeave.listen(leave);
+    route.onPreEnter.listen(preEnter);
+    route.onEnter.listen(enter);
+    route.onLeave.listen(leave);
 
     if (mount != null) {
       if (mount is Function) {
