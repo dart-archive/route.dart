@@ -54,7 +54,7 @@ class UrlMatch {
       return false;
     }
     return o.match == match && o.tail == tail &&
-        mapsEqual(o.parameters, parameters);
+        mapsShallowEqual(o.parameters, parameters);
   }
 
   String toString() {
