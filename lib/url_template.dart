@@ -51,7 +51,7 @@ class UrlTemplate implements UrlMatcher {
         replaceAllMapped(_specialChars, (m) => r'\' + m.group(0));
     _fields = <String>[];
     _chunks = [];
-    var exp = new RegExp(r':([\w0-9]+)');
+    var exp = new RegExp(r':(\w+)');
     StringBuffer sb = new StringBuffer('^');
     int start = 0;
     exp.allMatches(template).forEach((Match m) {
