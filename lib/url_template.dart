@@ -2,7 +2,7 @@ library url_template;
 
 import 'url_matcher.dart';
 
-final _specialChars = new RegExp(r'[\\\(\)\$\^\.\+\[\]\{\}\|]');
+final _specialChars = new RegExp(r'[\\()$^.+[\]{}|]');
 final _paramPattern = r'([^/?]+)';
 
 /**
