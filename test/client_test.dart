@@ -23,7 +23,7 @@ main() {
         path: '/foo',
         enter: expectAsync((RouteEvent e) {
           expect(e.path, '/foo');
-          expect(router.root.getRoute('foo').isActive, isTrue);
+          expect(router.root.findRoute('foo').isActive, isTrue);
         }));
     return router.route('/foo');
   });
@@ -38,7 +38,7 @@ main() {
           path: '/foo/bar',
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/foo/bar');
-            expect(router.root.getRoute('foobar').isActive, isTrue);
+            expect(router.root.findRoute('foobar').isActive, isTrue);
           }))
         ..addRoute(
           name: 'foo',
@@ -59,7 +59,7 @@ main() {
           path: '/foo/bar',
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/foo/bar');
-            expect(router.root.getRoute('foobar').isActive, isTrue);
+            expect(router.root.findRoute('foobar').isActive, isTrue);
           }));
       return router.route('/foo/bar');
     });
@@ -76,7 +76,7 @@ main() {
           path: '/foo/:param',
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/foo/bar');
-            expect(router.root.getRoute('fooparam').isActive, isTrue);
+            expect(router.root.findRoute('fooparam').isActive, isTrue);
           }));
       return router.route('/foo/bar');
     });
@@ -89,7 +89,7 @@ main() {
           path: '/:zzzzzz/address',
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/foo/address');
-            expect(router.root.getRoute('paramaddress').isActive, isTrue);
+            expect(router.root.findRoute('paramaddress').isActive, isTrue);
           }))
         ..addRoute(
           name: 'param_add',
@@ -106,7 +106,7 @@ main() {
           path: '/:param/foo',
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/bar/foo');
-            expect(router.root.getRoute('fooparam').isActive, isTrue);
+            expect(router.root.findRoute('fooparam').isActive, isTrue);
           }))
         ..addRoute(
           name: 'bar',
@@ -127,7 +127,7 @@ main() {
           path: '/bar/foo',
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/bar/foo');
-            expect(router.root.getRoute('barfoo').isActive, isTrue);
+            expect(router.root.findRoute('barfoo').isActive, isTrue);
           }))
         ;
       return router.route('/bar/foo');
@@ -145,7 +145,7 @@ main() {
           path: '/baz/bar/foo',
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/baz/bar/foo');
-            expect(router.root.getRoute('bazbarfoo').isActive, isTrue);
+            expect(router.root.findRoute('bazbarfoo').isActive, isTrue);
           }))
         ;
       return router.route('/baz/bar/foo');
@@ -163,7 +163,7 @@ main() {
           path: '/baz/:param/foo',
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/baz/bar/foo');
-            expect(router.root.getRoute('bazparamfoo').isActive, isTrue);
+            expect(router.root.findRoute('bazparamfoo').isActive, isTrue);
           }))
         ;
       return router.route('/baz/bar/foo');
@@ -181,7 +181,7 @@ main() {
           path: '/:param1/bar/foo',
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/baz/bar/foo');
-            expect(router.root.getRoute('param1barfoo').isActive, isTrue);
+            expect(router.root.findRoute('param1barfoo').isActive, isTrue);
           }))
         ;
       return router.route('/baz/bar/foo');
@@ -557,7 +557,7 @@ main() {
                   name: 'b',
                   path: '/:bar'));
 
-      var routeA = router.root.getRoute('a');
+      var routeA = router.root.findRoute('a');
 
       router.go('a.b', {}).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
@@ -618,7 +618,7 @@ main() {
           'bEnter': 1
         });
 
-        var routeA = router.root.getRoute('a');
+        var routeA = router.root.findRoute('a');
         router.go('b', {'bar': 'bbb'}, startingFrom: routeA).then((_) {
           var mockHistory = mockWindow.history;
 
@@ -648,7 +648,7 @@ main() {
                   defaultRoute: true,
                   path: '/:bar'));
 
-      var routeA = router.root.getRoute('a');
+      var routeA = router.root.findRoute('a');
 
       router.route('').then((_) {
         expect(router.url('a.b'), '/null/null');
@@ -673,7 +673,7 @@ main() {
 
   });
 
-  group('getRoute', () {
+  group('findRoute', () {
 
     test('should return correct routes', () {
       Route routeFoo, routeBar, routeBaz, routeQux, routeAux;
@@ -701,17 +701,17 @@ main() {
                         path: '/:aux',
                         mount: (child) => routeAux = child)));
 
-      expect(router.root.getRoute('foo'), same(routeFoo));
-      expect(router.root.getRoute('foo.bar'), same(routeBar));
-      expect(routeFoo.getRoute('bar'), same(routeBar));
-      expect(router.root.getRoute('foo.bar.baz'), same(routeBaz));
-      expect(router.root.getRoute('foo.qux'), same(routeQux));
-      expect(router.root.getRoute('foo.qux.aux'), same(routeAux));
-      expect(routeQux.getRoute('aux'), same(routeAux));
-      expect(routeFoo.getRoute('qux.aux'), same(routeAux));
+      expect(router.root.findRoute('foo'), same(routeFoo));
+      expect(router.root.findRoute('foo.bar'), same(routeBar));
+      expect(routeFoo.findRoute('bar'), same(routeBar));
+      expect(router.root.findRoute('foo.bar.baz'), same(routeBaz));
+      expect(router.root.findRoute('foo.qux'), same(routeQux));
+      expect(router.root.findRoute('foo.qux.aux'), same(routeAux));
+      expect(routeQux.findRoute('aux'), same(routeAux));
+      expect(routeFoo.findRoute('qux.aux'), same(routeAux));
 
-      expect(router.root.getRoute('baz'), isNull);
-      expect(router.root.getRoute('foo.baz'), isNull);
+      expect(router.root.findRoute('baz'), isNull);
+      expect(router.root.findRoute('foo.baz'), isNull);
     });
 
   });
@@ -884,5 +884,5 @@ main() {
 
 }
 
-/// An alias for Router.root.getRoute(path)
-r(Router router, String path) => router.root.getRoute(path);
+/// An alias for Router.root.findRoute(path)
+r(Router router, String path) => router.root.findRoute(path);

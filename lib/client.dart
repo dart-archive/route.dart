@@ -15,6 +15,8 @@ import 'url_matcher.dart';
 export 'url_matcher.dart';
 import 'url_template.dart';
 
+part 'route_handle.dart';
+
 
 final _logger = new Logger('route');
 final _pathSeparator = '.';
@@ -24,135 +26,150 @@ typedef RouteEnterEventHandler(RouteEnterEvent path);
 typedef RouteLeaveEventHandler(RouteLeaveEvent path);
 
 /**
- * A helper Router handle that scopes all route event subsriptions to it's
- * instance and provides an convinience [discard] method.
+ * [Route] represents a node in the route tree.
  */
-class RouteHandle implements Route {
-  Route _route;
-  final StreamController<RoutePreEnterEvent> _onPreEnterController;
-  final StreamController<RouteEnterEvent> _onEnterController;
-  final StreamController<RouteLeaveEvent> _onLeaveController;
+abstract class Route {
+  /**
+   * Name of the route. Used when querying routes.
+   */
+  String get name;
 
+  /**
+   * A path fragment [UrlMatcher] for this route.
+   */
+  UrlMatcher get path;
+
+  /**
+   * Parent route in the route tree.
+   */
+  Route get parent;
+
+  /**
+   * Indicates whether this route is currently active. Root route is always
+   * active.
+   */
+  bool get isActive;
+
+  /**
+   * Returns parameters for the currently active route. If the route is not
+   * active the getter returns null.
+   */
+  Map get parameters;
+
+  /**
+   * Returns a stream of [RouteEnterEvent] events. The [RouteEnterEvent] event
+   * is fired when route has already been made active, but before subroutes
+   * are entered. The event starts at the root and propagates from parent to
+   * child routes.
+   *
+   * Deprecated: use [onEnter] instead.
+   */
   @deprecated
-  Stream<RouteEnterEvent> get onRoute => onEnter;
-  Stream<RoutePreEnterEvent> get onPreEnter => _onPreEnterController.stream;
-  Stream<RouteEnterEvent> get onEnter => _onEnterController.stream;
-  Stream<RouteLeaveEvent> get onLeave => _onLeaveController.stream;
+  Stream<RouteEnterEvent> get onRoute;
 
-  StreamSubscription _onPreEnterSubscription;
-  StreamSubscription _onEnterSubscription;
-  StreamSubscription _onLeaveSubscription;
-  List<RouteHandle> _childHandles = <RouteHandle>[];
+  /**
+   * Returns a stream of [RoutePreEnterEvent] events. The [RoutePreEnterEvent]
+   * event is fired when the route is matched during the routing, but before
+   * any previous routes were left, or any new routes were entered. The event
+   * starts at the root and propagates from parent to child routes.
+   *
+   * At this stage it's possible to veto entering of the route by calling
+   * [RoutePreEnterEvent.allowEnter] with a [Future] returns a boolean value
+   * indicating whether enter is permitted (true) or not (false).
+   */
+  Stream<RoutePreEnterEvent> get onPreEnter;
 
-  RouteHandle._new(this._route)
-      : _onEnterController =
-            new StreamController<RouteEnterEvent>.broadcast(sync: true),
-        _onPreEnterController =
-            new StreamController<RoutePreEnterEvent>.broadcast(sync: true),
-        _onLeaveController =
-            new StreamController<RouteLeaveEvent>.broadcast(sync: true) {
-    _onEnterSubscription = _route.onEnter.listen(_onEnterController.add);
-    _onPreEnterSubscription =
-        _route.onPreEnter.listen(_onPreEnterController.add);
-    _onLeaveSubscription = _route.onLeave.listen(_onLeaveController.add);
-  }
+  /**
+   * Returns a stream of [RouteLeaveEvent] events. The [RouteLeaveEvent]
+   * event is fired when the route is being left. The event starts at the leaf
+   * route and propagates from child to parent routes.
+   *
+   * At this stage it's possible to veto leaving of the route by calling
+   * [RouteLeaveEvent.allowLeave] with a [Future] returns a boolean value
+   * indicating whether leave is permitted (true) or not (false).
+   *
+   * Note: that once child routes have been notified of the leave they will not
+   * be notified of the subsequent veto by any parent route. See:
+   * https://github.com/angular/route.dart/issues/28
+   */
+  Stream<RouteLeaveEvent> get onLeave;
 
-  /// discards this handle.
-  void discard() {
-    _logger.finest('discarding handle for $_route');
-    _onPreEnterSubscription.cancel();
-    _onEnterSubscription.cancel();
-    _onLeaveSubscription.cancel();
-    _onEnterController.close();
-    _onLeaveController.close();
-    _childHandles
-        ..forEach((RouteHandle c) => c.discard())
-        ..clear();
-    _route = null;
-  }
+  /**
+   * Returns a stream of [RouteEnterEvent] events. The [RouteEnterEvent] event
+   * is fired when route has already been made active, but before subroutes
+   * are entered.  The event starts at the root and propagates from parent
+   * to child routes.
+   */
+  Stream<RouteEnterEvent> get onEnter;
 
-  /// Not supported. Overridden to throw an error.
   void addRoute({String name, Pattern path, bool defaultRoute: false,
-    RouteEnterEventHandler enter, RoutePreEnterEventHandler preEnter,
-    RouteLeaveEventHandler leave, mount}) =>
-          throw new UnsupportedError('addRoute is not supported in handle');
+        RouteEnterEventHandler enter, RoutePreEnterEventHandler preEnter,
+        RouteLeaveEventHandler leave, mount});
 
-  /// See [Route.getRoute]
-  Route getRoute(String routePath) {
-    Route r = _assertState(() => _getHost(_route).getRoute(routePath));
-    if (r == null) return null;
-    var handle = r.newHandle();
-    if (handle != null) _childHandles.add(handle);
-    return handle;
-  }
+  /**
+   * Queries sub-routes using the [routePath] and returns the matching [Route].
+   *
+   * [routePath] is a dot-separated list of route names. Ex: foo.bar.baz, which
+   * means that current route should contain route named 'foo', the 'foo' route
+   * should contain route named 'bar', and so on.
+   *
+   * If no match is found then null is returned.
+   *
+   * Deprecated: use [findRoute] instead.
+   */
+  @deprecated
+  Route getRoute(String routePath);
+
+  /**
+   * Queries sub-routes using the [routePath] and returns the matching [Route].
+   *
+   * [routePath] is a dot-separated list of route names. Ex: foo.bar.baz, which
+   * means that current route should contain route named 'foo', the 'foo' route
+   * should contain route named 'bar', and so on.
+   *
+   * If no match is found then null is returned.
+   */
+  Route findRoute(String routePath);
 
   /**
    * Create an return a new [RouteHandle] for this route.
    */
-  RouteHandle newHandle() {
-    _logger.finest('newHandle for $this');
-    return new RouteHandle._new(_getHost(_route));
-  }
+  RouteHandle newHandle();
 
-  Route _getHost(Route r) {
-    _assertState();
-    if (r == null) throw new StateError('Oops?!');
-    if ((r is Route) && (r is! RouteHandle)) return r;
-    RouteHandle rh = r;
-    return rh._getHost(rh._route);
-  }
-
-  /// See [Route.reverse]
-  String reverse(String tail) =>
-      _assertState(() => _getHost(_route).reverse(tail));
-
-  dynamic _assertState([f()]) {
-    if (_route == null) {
-      throw new StateError('This route handle is already discated.');
-    }
-    return f == null ? null : f();
-  }
-
-  /// See [Route.isActive]
-  bool get isActive => _route.isActive;
-
-  /// See [Route.parameters]
-  Map get parameters => _route.parameters;
-
-  /// See [Route.path]
-  UrlMatcher get path => _route.path;
-
-  /// See [Route.name]
-  String get name => _route.name;
-
-  /// See [Route.parent]
-  Route get parent => _route.parent;
+  String toString() => '[Route: $name]';
 }
 
 /**
  * Route is a node in the tree of routes. The edge leading to the route is
  * defined by path.
  */
-class Route {
+class RouteImpl implements Route {
+  @override
   final String name;
-  final _routes = <String, Route>{};
+  @override
   final UrlMatcher path;
+  @override
+  final RouteImpl parent;
+
+  final _routes = <String, RouteImpl>{};
   final StreamController<RouteEnterEvent> _onEnterController;
   final StreamController<RoutePreEnterEvent> _onPreEnterController;
   final StreamController<RouteLeaveEvent> _onLeaveController;
-  final Route parent;
-  Route _defaultRoute;
-  Route _currentRoute;
+  RouteImpl _defaultRoute;
+  RouteImpl _currentRoute;
   RouteEvent _lastEvent;
 
+  @override
   @deprecated
   Stream<RouteEvent> get onRoute => onEnter;
-
+  @override
   Stream<RouteEvent> get onPreEnter => _onPreEnterController.stream;
+  @override
   Stream<RouteEvent> get onLeave => _onLeaveController.stream;
+  @override
   Stream<RouteEvent> get onEnter => _onEnterController.stream;
 
-  Route._new({this.name, this.path, this.parent})
+  RouteImpl._new({this.name, this.path, this.parent})
       : _onEnterController =
             new StreamController<RouteEnterEvent>.broadcast(sync: true),
         _onPreEnterController =
@@ -160,6 +177,7 @@ class Route {
         _onLeaveController =
             new StreamController<RouteLeaveEvent>.broadcast(sync: true);
 
+  @override
   void addRoute({String name, Pattern path, bool defaultRoute: false,
       RouteEnterEventHandler enter, RoutePreEnterEventHandler preEnter,
       RouteLeaveEventHandler leave, mount}) {
@@ -175,7 +193,7 @@ class Route {
 
     var matcher = path is UrlMatcher ? path : new UrlTemplate(path.toString());
 
-    var route = new Route._new(name: name, path: matcher, parent: this);
+    var route = new RouteImpl._new(name: name, path: matcher, parent: this);
 
     route.onPreEnter.listen(preEnter);
     route.onEnter.listen(enter);
@@ -198,11 +216,11 @@ class Route {
     _routes[name] = route;
   }
 
-  /**
-   * Returns a route node at the end of the given route path. Route path
-   * dot delimited string of route names.
-   */
-  Route getRoute(String routePath) {
+  @override
+  Route getRoute(String routePath) => findRoute(routePath);
+
+  @override
+  Route findRoute(String routePath) {
     var routeName = routePath.split(_pathSeparator).first;
     if (!_routes.containsKey(routeName)) {
       _logger.warning('Invalid route name: $routeName $_routes');
@@ -221,7 +239,7 @@ class Route {
     }
     _populateQueryParams(parent._currentRoute._lastEvent.parameters,
         parent._currentRoute, queryParams);
-    return parent._getHead(parent._currentRoute.reverse(tail), queryParams);
+    return parent._getHead(parent._currentRoute._reverse(tail), queryParams);
   }
 
   String _getTailUrl(String routePath, Map parameters, Map queryParams) {
@@ -256,19 +274,18 @@ class Route {
       ? parameters
       : new Map.from(lastEvent.parameters)..addAll(parameters);
 
-  String toString() =>  '[Route: $name]';
-
   /**
    * Returns a URL for this route. The tail (url generated by the child path)
    * will be passes to the UrlMatcher to be properly appended in the
    * right place.
    */
-  String reverse(String tail) =>
+  String _reverse(String tail) =>
       path.reverse(parameters: _lastEvent.parameters, tail: tail);
 
   /**
    * Create an return a new [RouteHandle] for this route.
    */
+  @override
   RouteHandle newHandle() {
     _logger.finest('newHandle for $this');
     return new RouteHandle._new(this);
@@ -278,6 +295,7 @@ class Route {
    * Indicates whether this route is currently active. Root route is always
    * active.
    */
+  @override
   bool get isActive =>
       parent == null ? true : identical(parent._currentRoute, this);
 
@@ -285,6 +303,7 @@ class Route {
    * Returns parameters for the currently active route. If the route is not
    * active the getter returns null.
    */
+  @override
   Map get parameters {
     if (isActive) {
       if (_lastEvent == null) return {};
@@ -399,7 +418,7 @@ class Router {
             ? !History.supportsState
             : useFragment,
         _window = (windowImpl == null) ? window : windowImpl,
-        root = new Route._new();
+        root = new RouteImpl._new();
 
   /**
    * A stream of route calls.
@@ -485,7 +504,7 @@ class Router {
     return _leaveCurrentRoute(startingFrom, event);
   }
 
-  List _matchingRoutes(String path, Route baseRoute) {
+  List _matchingRoutes(String path, RouteImpl baseRoute) {
     var routes = baseRoute._routes.values.toList();
     if (sortRoutes) {
       routes.sort((r1, r2) => r1.path.compareTo(r2.path));
@@ -493,7 +512,7 @@ class Router {
     return routes.where((r) => r.path.match(path) != null).toList();
   }
 
-  Iterable<_Match> _matchingTreePath(String path, Route baseRoute) {
+  Iterable<_Match> _matchingTreePath(String path, RouteImpl baseRoute) {
     List<_Match> treePath = <_Match>[];
     Route matchedRoute;
     do {
@@ -519,7 +538,7 @@ class Router {
     return treePath;
   }
 
-  bool _paramsChanged(Route baseRoute, UrlMatch match) {
+  bool _paramsChanged(RouteImpl baseRoute, UrlMatch match) {
     return baseRoute._currentRoute._lastEvent.path != match.match ||
         !mapsShallowEqual(baseRoute._currentRoute._lastEvent.parameters,
             match.parameters);
@@ -591,18 +610,18 @@ class Router {
     return [key, value];
   }
 
-  void _unsetAllCurrentRoutes(Route r) {
+  void _unsetAllCurrentRoutes(RouteImpl r) {
     if (r._currentRoute != null) {
       _unsetAllCurrentRoutes(r._currentRoute);
       r._currentRoute = null;
     }
   }
 
-  Future<bool> _leaveCurrentRoute(Route base, RouteLeaveEvent e) =>
+  Future<bool> _leaveCurrentRoute(RouteImpl base, RouteLeaveEvent e) =>
       Future.wait(_leaveCurrentRouteHelper(base, e))
           .then((values) => values.fold(true, (c, v) => c && v));
 
-  List<Future<bool>> _leaveCurrentRouteHelper(Route base, RouteLeaveEvent e) {
+  List<Future<bool>> _leaveCurrentRouteHelper(RouteImpl base, RouteLeaveEvent e) {
     var futures = [];
     if (base._currentRoute != null) {
       List<Future<bool>> pendingResponses = <Future<bool>>[];
@@ -699,7 +718,7 @@ class Router {
    * Excludes the root path.
    */
   List<Route> get activePath {
-    var res = <Route>[];
+    var res = <RouteImpl>[];
     var current = root;
     while (current._currentRoute != null) {
       current = current._currentRoute;
@@ -707,10 +726,15 @@ class Router {
     }
     return res;
   }
+
+  /**
+   * A shortcut for router.root.getRoute().
+   */
+  Route findRoute(String routePath) => root.findRoute(routePath);
 }
 
 class _Match {
-  final Route route;
+  final RouteImpl route;
   final UrlMatch urlMatch;
 
   _Match(this.route, this.urlMatch);

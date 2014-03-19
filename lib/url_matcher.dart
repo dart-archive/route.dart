@@ -57,6 +57,8 @@ class UrlMatch {
         mapsShallowEqual(o.parameters, parameters);
   }
 
+  int get hashCode => 13 + match.hashCode + tail.hashCode + parameters.hashCode;
+
   String toString() {
     return '{$match, $tail, $parameters}';
   }
