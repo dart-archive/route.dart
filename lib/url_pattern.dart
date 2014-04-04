@@ -9,7 +9,7 @@ import 'url_matcher.dart';
 // From the PatternCharacter rule here:
 // http://ecma-international.org/ecma-262/5.1/#sec-15.10
 // removed '( and ')' since we'll never escape them when not in a group
-final _specialChars = new RegExp(r'[\^\$\.\|\+\[\]\{\}]');
+final _specialChars = new RegExp(r'[$.|+[\]{}^]');
 
 UrlPattern urlPattern(String p) => new UrlPattern(p);
 
