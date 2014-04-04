@@ -7,7 +7,7 @@ library route.client_test;
 import 'dart:async';
 
 import 'package:unittest/unittest.dart';
-import 'package:unittest/mock.dart';
+import 'package:mock/mock.dart';
 import 'package:route_hierarchical/client.dart';
 import 'package:route_hierarchical/url_pattern.dart';
 
