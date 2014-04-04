@@ -59,7 +59,7 @@ abstract class Route {
   /**
    * Whether to trigger the leave event when only the parameters change.
    */
-  final bool dontLeaveOnParamChanges;
+  bool get dontLeaveOnParamChanges;
 
   /**
    * Returns a stream of [RouteEnterEvent] events. The [RouteEnterEvent] event
@@ -502,7 +502,7 @@ class Router {
     });
   }
 
-  Future<bool> _leaveOldRoutes(Route startingFrom, List<_Match> treePath) {
+  Future<bool> _leaveOldRoutes(RouteImpl startingFrom, List<_Match> treePath) {
     if (treePath.isEmpty) return new Future.value(true);
 
     var currentRoute = startingFrom._currentRoute;

@@ -116,4 +116,8 @@ class RouteHandle implements Route {
   /// See [Route.parent]
   @override
   Route get parent => _route.parent;
+
+  /// See [Route.dontLeaveOnParamChanges]
+  @override
+  bool get dontLeaveOnParamChanges => _route.dontLeaveOnParamChanges;
 }
