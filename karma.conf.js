@@ -18,10 +18,13 @@ module.exports = function(config) {
 
     // If browser does not capture in given timeout [ms], kill it
     captureTimeout: 5000,
+    // 5 minutes is enough time for dart2js to run on Travis...
+    browserNoActivityTimeout: 300000,
 
     plugins: [
       'karma-dart',
       'karma-chrome-launcher',
+      'karma-firefox-launcher',
       'karma-script-launcher',
       'karma-junit-reporter'
     ],
