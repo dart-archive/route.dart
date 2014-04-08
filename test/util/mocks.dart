@@ -5,7 +5,7 @@
 library route.test_mocks;
 
 import 'dart:html';
-import 'package:unittest/mock.dart';
+import 'package:mock/mock.dart';
 
 class MockWindow extends Mock implements Window {
   final history = new MockHistory();
