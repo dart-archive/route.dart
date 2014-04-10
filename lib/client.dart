@@ -664,13 +664,16 @@ class Router {
       });
       route(_normalizeHash(_window.location.hash));
     } else {
+      String getPath() =>
+          '${_window.location.pathname}${_window.location.hash}';
+
       _window.onPopState.listen((_) {
-        var path = '${_window.location.pathname}${_window.location.hash}';
-        route(path).then((allowed) {
+        route(getPath()).then((allowed) {
           // if not allowed, we need to restore the browser location
           if (!allowed) _window.history.back();
         });
       });
+      route(getPath());
     }
     if (!ignoreClick) {
       if (appRoot == null) appRoot = _window.document.documentElement;
