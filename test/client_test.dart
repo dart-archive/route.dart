@@ -5,6 +5,7 @@
 library route.client_test;
 
 import 'dart:async';
+import 'dart:html';
 
 import 'package:unittest/unittest.dart';
 import 'package:mock/mock.dart';
@@ -955,6 +956,65 @@ main() {
           });
         });
       });
+    });
+
+  });
+
+  group('listen', () {
+
+    group('fragment', () {
+
+      test('shoud route current hash on listen', () {
+        var mockWindow = new MockWindow();
+        var mockHashChangeController = new StreamController<Event>(sync: true);
+
+        mockWindow.when(callsTo('get onHashChange'))
+            .alwaysReturn(mockHashChangeController.stream);
+        mockWindow.location.when(callsTo('get hash')).alwaysReturn('#/foo');
+        var router = new Router(useFragment: true, windowImpl: mockWindow);
+        router.root.addRoute(name: 'foo', path: '/foo');
+        router.onRouteStart.listen(expectAsync((RouteStartEvent start) {
+          start.completed.then(expectAsync((_) {
+            expect(router.findRoute('foo').isActive, isTrue);
+          }));
+        }, count: 1));
+        router.listen(ignoreClick: true);
+      });
+
+    });
+
+    group('pushState', () {
+
+      testInit(mockWindow, [count = 1]) {
+        mockWindow.location.when(callsTo('get hash')).alwaysReturn('');
+        mockWindow.location.when(callsTo('get pathname')).alwaysReturn('/foo');
+        var router = new Router(useFragment: false, windowImpl: mockWindow);
+        router.root.addRoute(name: 'foo', path: '/foo');
+        router.onRouteStart.listen(expectAsync((RouteStartEvent start) {
+          start.completed.then(expectAsync((_) {
+            expect(router.findRoute('foo').isActive, isTrue);
+          }));
+        }, count: count));
+        router.listen(ignoreClick: true);
+      }
+
+      test('shoud route current path on listen with pop', () {
+        var mockWindow = new MockWindow();
+        var mockPopStateController = new StreamController<Event>(sync: true);
+        mockWindow.when(callsTo('get onPopState'))
+            .alwaysReturn(mockPopStateController.stream);
+        testInit(mockWindow, 2);
+        mockPopStateController.add(null);
+      });
+
+      test('shoud route current path on listen without pop', () {
+        var mockWindow = new MockWindow();
+        var mockPopStateController = new StreamController<Event>(sync: true);
+        mockWindow.when(callsTo('get onPopState'))
+            .alwaysReturn(mockPopStateController.stream);
+        testInit(mockWindow);
+      });
+
     });
 
   });
