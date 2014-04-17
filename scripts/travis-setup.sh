@@ -31,6 +31,6 @@ rm $DARTIUM_ZIP
 mv dartium-* dartium
 
 echo =============================================================================
-. ./test/scripts/env.sh
+. ./scripts/env.sh
 $DART --version
 $PUB install
