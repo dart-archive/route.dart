@@ -690,20 +690,20 @@ main() {
         'bEnter': 0
       });
 
-      router.route('').then((_) {
+      return router.route('').then((_) {
         expect(counters, {
           'aEnter': 1,
           'bEnter': 1
         });
 
         var routeA = router.root.findRoute('a');
-        router.go('b', {'bar': 'bbb'}, startingFrom: routeA).then((_) {
+        return router.go('b', {'bar': 'bbb'}, startingFrom: routeA).then((_) {
           var mockHistory = mockWindow.history;
 
           mockHistory.getLogs(callsTo('pushState', anything))
              .verify(happenedExactly(1));
           expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-              [null, '', '/null/bbb']);
+              [null, null, '/null/bbb']);
         });
       });
     });
@@ -1031,7 +1031,7 @@ main() {
       test('it should be called if event triggered on anchor element', () {
         AnchorElement anchor = new AnchorElement();
         anchor.href = '#test1';
-        document.documentElement.append(toRemove = anchor);
+        document.body.append(toRemove = anchor);
 
         var mockWindow = new MockWindow();
         var mockHashChangeController = new StreamController<Event>(sync: true);
@@ -1042,11 +1042,11 @@ main() {
         mockWindow.location.when(callsTo('get host')).alwaysReturn(window.location.host);
 
         var router = new Router(useFragment: true, windowImpl: mockWindow);
-        router.listen(appRoot: document.documentElement);
+        router.listen(appRoot: anchor);
 
         router.onRouteStart.listen(expectAsync((RouteStartEvent e) {
           expect(e.uri, 'test1');
-        }));
+        }, max: 2));
 
         anchor.click();
       });
@@ -1056,7 +1056,7 @@ main() {
         AnchorElement anchor = new AnchorElement();
         anchor.href = '#test2';
         anchor.append(anchorChild);
-        document.documentElement.append(toRemove = anchor);
+        document.body.append(toRemove = anchor);
 
         var mockWindow = new MockWindow();
         var mockHashChangeController = new StreamController<Event>(sync: true);
@@ -1067,11 +1067,11 @@ main() {
         mockWindow.location.when(callsTo('get host')).alwaysReturn(window.location.host);
 
         var router = new Router(useFragment: true, windowImpl: mockWindow);
-        router.listen(appRoot: document.documentElement);
+        router.listen(appRoot: anchor);
 
         router.onRouteStart.listen(expectAsync((RouteStartEvent e) {
           expect(e.uri, 'test2');
-        }));
+        }, max: 2));
 
         anchorChild.click();
       });
