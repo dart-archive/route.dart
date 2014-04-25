@@ -608,7 +608,7 @@ main() {
         mockHistory.getLogs(callsTo('pushState', anything))
             .verify(happenedExactly(1));
         expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-            [null, '', '/articles']);
+            [null, null, '/articles']);
         mockHistory.getLogs(callsTo('replaceState', anything))
             .verify(happenedExactly(0));
 
@@ -616,7 +616,7 @@ main() {
           mockHistory.getLogs(callsTo('replaceState', anything))
               .verify(happenedExactly(1));
           expect(mockHistory.getLogs(callsTo('replaceState', anything)).last.args,
-              [null, '', '/articles']);
+              [null, null, '/articles']);
           mockHistory.getLogs(callsTo('pushState', anything))
               .verify(happenedExactly(1));
         }));
@@ -643,13 +643,13 @@ main() {
         mockHistory.getLogs(callsTo('pushState', anything))
             .verify(happenedExactly(1));
         expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-            [null, '', '/null/null']);
+            [null, null, '/null/null']);
 
         router.go('a.b', {'foo': 'aaaa', 'bar': 'bbbb'}).then(expectAsync((_) {
           mockHistory.getLogs(callsTo('pushState', anything))
               .verify(happenedExactly(2));
           expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-              [null, '', '/aaaa/bbbb']);
+              [null, null, '/aaaa/bbbb']);
 
           router.go('b', {'bar': 'bbbb'}, startingFrom: routeA)
               .then(expectAsync((_) {
@@ -657,7 +657,7 @@ main() {
                    .verify(happenedExactly(3));
                 expect(
                     mockHistory.getLogs(callsTo('pushState')).last.args,
-                    [null, '', '/aaaa/bbbb']);
+                    [null, null, '/aaaa/bbbb']);
               }));
         }));
       }));
