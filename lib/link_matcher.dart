@@ -18,6 +18,5 @@ abstract class RouterLinkMatcher {
  * set as target.
  */
 class DefaultRouterLinkMatcher implements RouterLinkMatcher {
-  bool matches(AnchorElement link) =>
-    !_TARGETS.contains(link.target);
+  bool matches(AnchorElement link) => !_TARGETS.contains(link.target);
 }

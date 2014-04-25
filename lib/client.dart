@@ -12,7 +12,7 @@ import 'package:logging/logging.dart';
 import 'src/utils.dart';
 
 import 'link_matcher.dart';
-import 'link_handler.dart';
+import 'click_handler.dart';
 import 'url_matcher.dart';
 export 'url_matcher.dart';
 import 'url_template.dart';
@@ -408,7 +408,7 @@ class Router {
       new StreamController<RouteStartEvent>.broadcast(sync: true);
   final bool sortRoutes;
   bool _listen = false;
-  WindowClickHandler _linkHandler;
+  WindowClickHandler _clickHandler;
 
   /**
    * [useFragment] determines whether this Router uses pure paths with
@@ -417,21 +417,22 @@ class Router {
    * [History.supportsState].
    */
   Router({bool useFragment, Window windowImpl, bool sortRoutes: true,
-         RouterLinkMatcher linkMatcher, WindowClickHandler linkHandler})
+         RouterLinkMatcher linkMatcher, WindowClickHandler clickHandler})
       : this._init(null, useFragment: useFragment, windowImpl: windowImpl,
-          sortRoutes: sortRoutes, linkMatcher: linkMatcher, linkHandler: linkHandler);
+          sortRoutes: sortRoutes, linkMatcher: linkMatcher, clickHandler: clickHandler);
 
 
   Router._init(Router parent, {bool useFragment, Window windowImpl,
-      this.sortRoutes, linkMatcher, linkHandler})
+      this.sortRoutes, RouterLinkMatcher linkMatcher,
+      WindowClickHandler clickHandler})
       : _useFragment = (useFragment == null)
             ? !History.supportsState
             : useFragment,
         _window = (windowImpl == null) ? window : windowImpl,
         root = new RouteImpl._new() {
     var lm = linkMatcher == null ? new DefaultRouterLinkMatcher() : linkMatcher;
-    _linkHandler = linkHandler == null ?
-        new DefaultWindowLinkHandler(lm, this, _useFragment, _window, _normalizeHash) : linkHandler;
+    _clickHandler = clickHandler == null ?
+        new DefaultWindowClickHandler(lm, this, _useFragment, _window, _normalizeHash) : clickHandler;
   }
 
   /**
@@ -529,7 +530,7 @@ class Router {
         .where((r) => r.path.match(path) != null)
         .toList();
 
-    return sortRoutes ? 
+    return sortRoutes ?
         (routes..sort((r1, r2) => r1.path.compareTo(r2.path))) : routes;
   }
 
@@ -627,7 +628,7 @@ class Router {
     }
     var splitPoint = kvPair.indexOf('=');
 
-    return (splitPoint == -1) ? 
+    return (splitPoint == -1) ?
         [kvPair, '']
         : [kvPair.substring(0, splitPoint), kvPair.substring(splitPoint + 1)];
   }
@@ -690,7 +691,7 @@ class Router {
       _logger.finest('listen on win');
       appRoot.onClick
           .where((MouseEvent e) => !(e.ctrlKey || e.metaKey || e.shiftKey))
-          .listen(_linkHandler);
+          .listen(_clickHandler);
     }
   }
 

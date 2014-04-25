@@ -1,11 +1,10 @@
 library route.link_matcher_test;
 
-import 'dart:async';
 import 'dart:html';
 import 'package:unittest/unittest.dart';
 import 'package:mock/mock.dart';
+import 'package:route_hierarchical/click_handler.dart';
 import 'package:route_hierarchical/client.dart';
-import 'package:route_hierarchical/link_handler.dart';
 import 'package:route_hierarchical/link_matcher.dart';
 
 import 'util/mocks.dart';
@@ -15,11 +14,19 @@ main() {
 
     WindowClickHandler linkHandler;
     MockRouter router;
+    Element toRemove;
 
     setUp(() {
       router = new MockRouter();
-      linkHandler = new DefaultWindowLinkHandler(new DefaultRouterLinkMatcher(), router, true, window,
+      linkHandler = new DefaultWindowClickHandler(new DefaultRouterLinkMatcher(), router, true, window,
           (String hash) => hash.isEmpty ? '' : hash.substring(1));
+    });
+
+    tearDown(() {
+      if (toRemove != null) {
+        toRemove.remove();
+        toRemove = null;
+      }
     });
 
     MouseEvent _createMockMouseEvent({String anchorTarget, String anchorHref}) {
@@ -43,19 +50,19 @@ main() {
 
     test('it should process AnchorElements which has target set to _blank, _self, _top or _parent', () {
       MockMouseEvent mockMouseEvent = _createMockMouseEvent(anchorHref: '#test',
-        anchorTarget: '_blank');
+          anchorTarget: '_blank');
       linkHandler(mockMouseEvent);
 
       mockMouseEvent = _createMockMouseEvent(anchorHref: '#test',
-        anchorTarget: '_self');
+          anchorTarget: '_self');
       linkHandler(mockMouseEvent);
 
       mockMouseEvent = _createMockMouseEvent(anchorHref: '#test',
-        anchorTarget: '_top');
+          anchorTarget: '_top');
       linkHandler(mockMouseEvent);
 
       mockMouseEvent = _createMockMouseEvent(anchorHref: '#test',
-        anchorTarget: '_parent');
+          anchorTarget: '_parent');
       linkHandler(mockMouseEvent);
 
       // We expect 0 calls to router.gotoUrl
@@ -83,9 +90,9 @@ main() {
     test('it should be called if event triggerd on anchor element', () {
       AnchorElement anchor = new AnchorElement();
       anchor.href = '#test';
-      document.body.append(anchor);
+      document.body.append(toRemove = anchor);
 
-      var router = new Router(useFragment: true, linkHandler: expectAsync((e) {}));
+      var router = new Router(useFragment: true, clickHandler: expectAsync((e) {}));
       router.listen();
 
       // Trigger handle method in linkHandler
@@ -97,9 +104,9 @@ main() {
       AnchorElement anchor = new AnchorElement();
       anchor.href = '#test';
       anchor.append(anchorChild);
-      document.body.append(anchor);
+      document.body.append(toRemove = anchor);
 
-      var router = new Router(useFragment: true, linkHandler: expectAsync((e) {}));
+      var router = new Router(useFragment: true, clickHandler: expectAsync((e) {}));
       router.listen();
 
       // Trigger handle method in linkHandler
@@ -107,5 +114,3 @@ main() {
     });
   });
 }
-
-class MockRouter extends Mock implements Router {}

@@ -23,6 +23,9 @@ main() {
 
       anchor.target = '_self';
       expect(linkMatcher.matches(anchor), isFalse);
+
+      anchor.target = '';
+      expect(linkMatcher.matches(anchor), isTrue);
     });
   });
 }

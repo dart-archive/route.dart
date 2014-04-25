@@ -1017,6 +1017,67 @@ main() {
 
     });
 
+    group('links', () {
+
+      Element toRemove;
+
+      tearDown(() {
+        if (toRemove != null) {
+          toRemove.remove();
+          toRemove = null;
+        }
+      });
+
+      test('it should be called if event triggered on anchor element', () {
+        AnchorElement anchor = new AnchorElement();
+        anchor.href = '#test1';
+        document.documentElement.append(toRemove = anchor);
+
+        var mockWindow = new MockWindow();
+        var mockHashChangeController = new StreamController<Event>(sync: true);
+
+        mockWindow.when(callsTo('get onHashChange'))
+            .alwaysReturn(mockHashChangeController.stream);
+        mockWindow.location.when(callsTo('get hash')).alwaysReturn('#/foo');
+        mockWindow.location.when(callsTo('get host')).alwaysReturn(window.location.host);
+
+        var router = new Router(useFragment: true, windowImpl: mockWindow);
+        router.listen(appRoot: document.documentElement);
+
+        router.onRouteStart.listen(expectAsync((RouteStartEvent e) {
+          expect(e.uri, 'test1');
+        }));
+
+        anchor.click();
+      });
+
+      test('it should be called if event triggered on child of an anchor element', () {
+        Element anchorChild = new DivElement();
+        AnchorElement anchor = new AnchorElement();
+        anchor.href = '#test2';
+        anchor.append(anchorChild);
+        document.documentElement.append(toRemove = anchor);
+
+        var mockWindow = new MockWindow();
+        var mockHashChangeController = new StreamController<Event>(sync: true);
+
+        mockWindow.when(callsTo('get onHashChange'))
+            .alwaysReturn(mockHashChangeController.stream);
+        mockWindow.location.when(callsTo('get hash')).alwaysReturn('#/foo');
+        mockWindow.location.when(callsTo('get host')).alwaysReturn(window.location.host);
+
+        var router = new Router(useFragment: true, windowImpl: mockWindow);
+        router.listen(appRoot: document.documentElement);
+
+        router.onRouteStart.listen(expectAsync((RouteStartEvent e) {
+          expect(e.uri, 'test2');
+        }));
+
+        anchorChild.click();
+      });
+
+    });
+
   });
 
 }

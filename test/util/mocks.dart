@@ -6,6 +6,7 @@ library route.test_mocks;
 
 import 'dart:html';
 import 'package:mock/mock.dart';
+import 'package:route_hierarchical/client.dart';
 
 class MockWindow extends Mock implements Window {
   final history = new MockHistory();
@@ -36,5 +37,9 @@ class MockDocument extends Mock implements HtmlDocument {
 }
 
 class MockMouseEvent extends Mock implements MouseEvent {
+
+}
+
+class MockRouter extends Mock implements Router {
 
 }
