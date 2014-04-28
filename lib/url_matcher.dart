@@ -5,10 +5,9 @@ import 'src/utils.dart';
 /**
  * A reversible URL matcher interface.
  */
-abstract class UrlMatcher extends Comparable {
-
+abstract class UrlMatcher extends Comparable<UrlMatcher> {
   /**
-   * Attempts to match a given URL. If match is successul then returns an
+   * Attempts to match a given URL. If match is successful then returns an
    * instance or [UrlMatch], otherwise returns [null].
    */
   UrlMatch match(String url);
@@ -25,41 +24,35 @@ abstract class UrlMatcher extends Comparable {
   List<String> urlParameterNames();
 
   /**
-   * Return a value which is:
+   * Returns a value which is:
    * * negative if this matcher should be tested before another.
    * * zero if this matcher and another can be tested in no particular order.
    * * positive if this matcher should be tested after another.
    */
-  int compareTo(UrlMatcher other) => 0;
+  int compareTo(UrlMatcher other);
 }
 
 /**
- * Object representing a successul URL match.
+ * Object representing a successful URL match.
  */
 class UrlMatch {
-
   /// Matched section of the URL
   final String match;
 
   /// Remaining unmatched suffix
   final String tail;
 
-  ///
   final Map parameters;
 
   UrlMatch(this.match, this.tail, this.parameters);
 
-  bool operator ==(o) {
-    if (!(o is UrlMatch)) {
-      return false;
-    }
-    return o.match == match && o.tail == tail &&
-        mapsShallowEqual(o.parameters, parameters);
-  }
+  bool operator ==(UrlMatch other) =>
+    other is UrlMatch &&
+    other.match == match &&
+    other.tail == tail &&
+    mapsShallowEqual(other.parameters, parameters);
 
-  int get hashCode => 13 + match.hashCode + tail.hashCode + parameters.hashCode;
+  int get hashCode => 13 * match.hashCode + 101 * tail.hashCode + 199 * parameters.hashCode;
 
-  String toString() {
-    return '{$match, $tail, $parameters}';
-  }
+  String toString() => '{$match, $tail, $parameters}';
 }
