@@ -720,6 +720,9 @@ class Router {
         (_window.document as HtmlDocument).title = title;
       }
     } else {
+      if (title == null) {
+        title = _window.document.title;
+      }
       if (replace) {
         _window.history.replaceState(null, title, path);
       } else {

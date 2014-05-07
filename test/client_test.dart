@@ -601,6 +601,7 @@ main() {
       var mockWindow = new MockWindow();
       var router = new Router(useFragment: false, windowImpl: mockWindow);
       router.root.addRoute(name: 'articles', path: '/articles');
+      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
 
       router.go('articles', {}).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
@@ -608,7 +609,7 @@ main() {
         mockHistory.getLogs(callsTo('pushState', anything))
             .verify(happenedExactly(1));
         expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-            [null, null, '/articles']);
+            [null, 'page title', '/articles']);
         mockHistory.getLogs(callsTo('replaceState', anything))
             .verify(happenedExactly(0));
 
@@ -616,7 +617,7 @@ main() {
           mockHistory.getLogs(callsTo('replaceState', anything))
               .verify(happenedExactly(1));
           expect(mockHistory.getLogs(callsTo('replaceState', anything)).last.args,
-              [null, null, '/articles']);
+              [null, 'page title', '/articles']);
           mockHistory.getLogs(callsTo('pushState', anything))
               .verify(happenedExactly(1));
         }));
@@ -625,6 +626,7 @@ main() {
 
     test('should work with hierarchical go', () {
       var mockWindow = new MockWindow();
+      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
       var router = new Router(windowImpl: mockWindow);
       router.root
         ..addRoute(
@@ -643,13 +645,13 @@ main() {
         mockHistory.getLogs(callsTo('pushState', anything))
             .verify(happenedExactly(1));
         expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-            [null, null, '/null/null']);
+            [null, 'page title', '/null/null']);
 
         router.go('a.b', {'foo': 'aaaa', 'bar': 'bbbb'}).then(expectAsync((_) {
           mockHistory.getLogs(callsTo('pushState', anything))
               .verify(happenedExactly(2));
           expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-              [null, null, '/aaaa/bbbb']);
+              [null, 'page title', '/aaaa/bbbb']);
 
           router.go('b', {'bar': 'bbbb'}, startingFrom: routeA)
               .then(expectAsync((_) {
@@ -657,7 +659,7 @@ main() {
                    .verify(happenedExactly(3));
                 expect(
                     mockHistory.getLogs(callsTo('pushState')).last.args,
-                    [null, null, '/aaaa/bbbb']);
+                    [null, 'page title', '/aaaa/bbbb']);
               }));
         }));
       }));
@@ -671,6 +673,7 @@ main() {
       };
 
       var mockWindow = new MockWindow();
+      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
       var router = new Router(windowImpl: mockWindow);
       router.root
         ..addRoute(
@@ -703,7 +706,7 @@ main() {
           mockHistory.getLogs(callsTo('pushState', anything))
              .verify(happenedExactly(1));
           expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-              [null, null, '/null/bbb']);
+              [null, 'page title', '/null/bbb']);
         });
       });
     });

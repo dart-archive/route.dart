@@ -15,25 +15,12 @@ class MockWindow extends Mock implements Window {
 }
 
 class MockHistory extends Mock implements History {
-  //TODO(pavelgj): ugly hack for making tests run in dart2js
-  void pushState(Object data, String title, [String url]) {
-    log.add(new LogEntry(name, 'pushState', [data, title, url], Action.IGNORE));
-  }
-
-  //TODO(pavelgj): ugly hack for making tests run in dart2js
-  void replaceState(Object data, String title, [String url]) {
-    log.add(new LogEntry(name, 'replaceState', [data, title, url], Action.IGNORE));
-  }
 }
 
 class MockLocation extends Mock implements Location {
 }
 
 class MockDocument extends Mock implements HtmlDocument {
-  //TODO(pavelgj): ugly hack for making tests run in dart2js
-  set title(String title) {
-    log.add(new LogEntry(name, '=title', [title], Action.IGNORE));
-  }
 }
 
 class MockMouseEvent extends Mock implements MouseEvent {
