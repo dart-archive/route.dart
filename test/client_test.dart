@@ -328,22 +328,23 @@ main() {
 
     test('should leave starting from child to parent', () {
       var log = [];
-      void logginLeaveHandler(RouteLeaveEvent r) {
+      void loggingLeaveHandler(RouteLeaveEvent r) {
         log.add(r.route.name);
       };
+
       var router = new Router();
       router.root
         ..addRoute(path: '/foo',
             name: 'foo',
-            leave: logginLeaveHandler,
+            leave: loggingLeaveHandler,
             mount: (Route route) => route
               ..addRoute(path: '/bar',
                   name: 'bar',
-                  leave: logginLeaveHandler,
+                  leave: loggingLeaveHandler,
                   mount: (Route route) => route
                     ..addRoute(path: '/baz',
                         name: 'baz',
-                        leave: logginLeaveHandler)));
+                        leave: loggingLeaveHandler)));
 
 
       router.route('/foo/bar/baz').then(expectAsync((_) {
@@ -474,9 +475,9 @@ main() {
 
       router.route('/foo/bar').then(expectAsync((_) {
         expect(counters, {
-          'fooPreEnter': 1,
+          'fooPreEnter': 1, // +1
           'fooPreLeave': 0,
-          'fooEnter': 1,
+          'fooEnter': 1,    // +1
           'fooLeave': 0,
           'barPreEnter': 0,
           'barPreLeave': 0,
@@ -486,38 +487,38 @@ main() {
 
         router.route('/foo/bar').then(expectAsync((_) {
           expect(counters, {
-              'fooPreEnter': 1,
-              'fooPreLeave': 0,
-              'fooEnter': 1,
-              'fooLeave': 0,
-              'barPreEnter': 0,
-              'barPreLeave': 0,
-              'barEnter': 0,
-              'barLeave': 0
+            'fooPreEnter': 1,
+            'fooPreLeave': 0,
+            'fooEnter': 1,
+            'fooLeave': 0,
+            'barPreEnter': 0,
+            'barPreLeave': 0,
+            'barEnter': 0,
+            'barLeave': 0
           });
 
           router.route('/foo/baz').then(expectAsync((_) {
             expect(counters, {
-                'fooPreEnter': 2,
-                'fooPreLeave': 1,
-                'fooEnter': 2,
-                'fooLeave': 1,
-                'barPreEnter': 0,
-                'barPreLeave': 0,
-                'barEnter': 0,
-                'barLeave': 0
+              'fooPreEnter': 2, // +1
+              'fooPreLeave': 1, // +1
+              'fooEnter': 2,    // +1
+              'fooLeave': 1,    // +1
+              'barPreEnter': 0,
+              'barPreLeave': 0,
+              'barEnter': 0,
+              'barLeave': 0
             });
 
             router.route('/bar').then(expectAsync((_) {
               expect(counters, {
-                  'fooPreEnter': 2,
-                  'fooPreLeave': 2,
-                  'fooEnter': 2,
-                  'fooLeave': 2,
-                  'barPreEnter': 1,
-                  'barPreLeave': 0,
-                  'barEnter': 1,
-                  'barLeave': 0
+                'fooPreEnter': 2,
+                'fooPreLeave': 2, // +1
+                'fooEnter': 2,
+                'fooLeave': 2,    // +1
+                'barPreEnter': 1, // +1
+                'barPreLeave': 0,
+                'barEnter': 1,    // +1
+                'barLeave': 0
               });
             }));
           }));
@@ -565,9 +566,9 @@ main() {
 
       router.route('/foo/bar').then(expectAsync((_) {
         expect(counters, {
-          'fooPreEnter': 1,
+          'fooPreEnter': 1, // +1
           'fooPreLeave': 0,
-          'fooEnter': 1,
+          'fooEnter': 1,    // +1
           'fooLeave': 0,
           'barPreEnter': 0,
           'barPreLeave': 0,
@@ -577,38 +578,38 @@ main() {
 
         router.route('/foo/bar').then(expectAsync((_) {
           expect(counters, {
-              'fooPreEnter': 1,
+            'fooPreEnter': 1,
+            'fooPreLeave': 0,
+            'fooEnter': 1,
+            'fooLeave': 0,
+            'barPreEnter': 0,
+            'barPreLeave': 0,
+            'barEnter': 0,
+            'barLeave': 0
+          });
+
+          router.route('/foo/baz').then(expectAsync((_) {
+            expect(counters, {
+              'fooPreEnter': 2, // +1
               'fooPreLeave': 0,
-              'fooEnter': 1,
+              'fooEnter': 2,    // +1
               'fooLeave': 0,
               'barPreEnter': 0,
               'barPreLeave': 0,
               'barEnter': 0,
               'barLeave': 0
-          });
-
-          router.route('/foo/baz').then(expectAsync((_) {
-            expect(counters, {
-                'fooPreEnter': 2,
-                'fooPreLeave': 0,
-                'fooEnter': 2,
-                'fooLeave': 0,
-                'barPreEnter': 0,
-                'barPreLeave': 0,
-                'barEnter': 0,
-                'barLeave': 0
             });
 
             router.route('/bar').then(expectAsync((_) {
               expect(counters, {
-                  'fooPreEnter': 2,
-                  'fooPreLeave': 1,
-                  'fooEnter': 2,
-                  'fooLeave': 1,
-                  'barPreEnter': 1,
-                  'barPreLeave': 0,
-                  'barEnter': 1,
-                  'barLeave': 0
+                'fooPreEnter': 2,
+                'fooPreLeave': 1, // +1
+                'fooEnter': 2,
+                'fooLeave': 1,    // +1
+                'barPreEnter': 1, // +1
+                'barPreLeave': 0,
+                'barEnter': 1,    // +1
+                'barLeave': 0
               });
             }));
           }));
