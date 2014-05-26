@@ -7,6 +7,7 @@ part of route.client;
 class RouteHandle implements Route {
   Route _route;
   final StreamController<RoutePreEnterEvent> _onPreEnterController;
+  final StreamController<RoutePreLeaveEvent> _onPreLeaveController;
   final StreamController<RouteEnterEvent> _onEnterController;
   final StreamController<RouteLeaveEvent> _onLeaveController;
 
@@ -16,11 +17,14 @@ class RouteHandle implements Route {
   @override
   Stream<RoutePreEnterEvent> get onPreEnter => _onPreEnterController.stream;
   @override
+  Stream<RoutePreLeaveEvent> get onPreLeave => _onPreLeaveController.stream;
+  @override
   Stream<RouteEnterEvent> get onEnter => _onEnterController.stream;
   @override
   Stream<RouteLeaveEvent> get onLeave => _onLeaveController.stream;
 
   StreamSubscription _onPreEnterSubscription;
+  StreamSubscription _onPreLeaveSubscription;
   StreamSubscription _onEnterSubscription;
   StreamSubscription _onLeaveSubscription;
   List<RouteHandle> _childHandles = <RouteHandle>[];
@@ -30,11 +34,15 @@ class RouteHandle implements Route {
             new StreamController<RouteEnterEvent>.broadcast(sync: true),
         _onPreEnterController =
             new StreamController<RoutePreEnterEvent>.broadcast(sync: true),
+        _onPreLeaveController =
+            new StreamController<RoutePreLeaveEvent>.broadcast(sync: true),
         _onLeaveController =
             new StreamController<RouteLeaveEvent>.broadcast(sync: true) {
     _onEnterSubscription = _route.onEnter.listen(_onEnterController.add);
     _onPreEnterSubscription =
         _route.onPreEnter.listen(_onPreEnterController.add);
+    _onPreLeaveSubscription =
+        _route.onPreLeave.listen(_onPreLeaveController.add);
     _onLeaveSubscription = _route.onLeave.listen(_onLeaveController.add);
   }
 
@@ -42,6 +50,7 @@ class RouteHandle implements Route {
   void discard() {
     _logger.finest('discarding handle for $_route');
     _onPreEnterSubscription.cancel();
+    _onPreLeaveSubscription.cancel();
     _onEnterSubscription.cancel();
     _onLeaveSubscription.cancel();
     _onEnterController.close();
@@ -56,7 +65,8 @@ class RouteHandle implements Route {
   @override
   void addRoute({String name, Pattern path, bool defaultRoute: false,
       RouteEnterEventHandler enter, RoutePreEnterEventHandler preEnter,
-      RouteLeaveEventHandler leave, mount, dontLeaveOnParamChanges: false}) {
+      RoutePreLeaveEventHandler preLeave,RouteLeaveEventHandler leave,
+      mount, dontLeaveOnParamChanges: false}) {
     throw new UnsupportedError('addRoute is not supported in handle');
   }
 

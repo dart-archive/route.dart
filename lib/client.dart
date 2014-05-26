@@ -6,6 +6,7 @@ library route.client;
 
 import 'dart:async';
 import 'dart:html';
+import 'dart:math';
 
 import 'package:logging/logging.dart';
 
@@ -25,6 +26,7 @@ const _PATH_SEPARATOR = '.';
 
 typedef void RoutePreEnterEventHandler(RoutePreEnterEvent event);
 typedef void RouteEnterEventHandler(RouteEnterEvent event);
+typedef void RoutePreLeaveEventHandler(RoutePreLeaveEvent event);
 typedef void RouteLeaveEventHandler(RouteLeaveEvent event);
 
 /**
@@ -85,6 +87,17 @@ abstract class Route {
   Stream<RoutePreEnterEvent> get onPreEnter;
 
   /**
+   * Returns a stream of [RoutePreLeaveEvent] events. The [RoutePreLeaveEvent]
+   * event is fired when the route is NOT matched during the routing, but before
+   * any routes are actually left, or any new routes were entered.
+   *
+   * At this stage it's possible to veto leaving of the route by calling
+   * [RoutePreLeaveEvent.allowLeave] with a [Future] returns a boolean value
+   * indicating whether enter is permitted (true) or not (false).
+   */
+  Stream<RoutePreLeaveEvent> get onPreLeave;
+
+  /**
    * Returns a stream of [RouteLeaveEvent] events. The [RouteLeaveEvent]
    * event is fired when the route is being left. The event starts at the leaf
    * route and propagates from child to parent routes.
@@ -109,7 +122,8 @@ abstract class Route {
 
   void addRoute({String name, Pattern path, bool defaultRoute: false,
         RouteEnterEventHandler enter, RoutePreEnterEventHandler preEnter,
-        RouteLeaveEventHandler leave, mount, dontLeaveOnParamChanges: false});
+        RoutePreLeaveEventHandler preLeave, RouteLeaveEventHandler leave,
+        mount, dontLeaveOnParamChanges: false});
 
   /**
    * Queries sub-routes using the [routePath] and returns the matching [Route].
@@ -157,6 +171,7 @@ class RouteImpl extends Route {
   final _routes = <String, RouteImpl>{};
   final StreamController<RouteEnterEvent> _onEnterController;
   final StreamController<RoutePreEnterEvent> _onPreEnterController;
+  final StreamController<RoutePreLeaveEvent> _onPreLeaveController;
   final StreamController<RouteLeaveEvent> _onLeaveController;
   RouteImpl _defaultRoute;
   RouteImpl _currentRoute;
@@ -170,6 +185,8 @@ class RouteImpl extends Route {
   @override
   Stream<RouteEvent> get onPreEnter => _onPreEnterController.stream;
   @override
+  Stream<RouteEvent> get onPreLeave => _onPreLeaveController.stream;
+  @override
   Stream<RouteEvent> get onLeave => _onLeaveController.stream;
   @override
   Stream<RouteEvent> get onEnter => _onEnterController.stream;
@@ -180,13 +197,16 @@ class RouteImpl extends Route {
             new StreamController<RouteEnterEvent>.broadcast(sync: true),
         _onPreEnterController =
             new StreamController<RoutePreEnterEvent>.broadcast(sync: true),
+        _onPreLeaveController =
+            new StreamController<RoutePreLeaveEvent>.broadcast(sync: true),
         _onLeaveController =
             new StreamController<RouteLeaveEvent>.broadcast(sync: true);
 
   @override
   void addRoute({String name, Pattern path, bool defaultRoute: false,
       RouteEnterEventHandler enter, RoutePreEnterEventHandler preEnter,
-      RouteLeaveEventHandler leave, mount, dontLeaveOnParamChanges: false}) {
+      RoutePreLeaveEventHandler preLeave, RouteLeaveEventHandler leave,
+      mount, dontLeaveOnParamChanges: false}) {
     if (name == null) {
       throw new ArgumentError('name is required for all routes');
     }
@@ -203,6 +223,7 @@ class RouteImpl extends Route {
         dontLeaveOnParamChanges: dontLeaveOnParamChanges);
 
     route..onPreEnter.listen(preEnter)
+         ..onPreLeave.listen(preLeave)
          ..onEnter.listen(enter)
          ..onLeave.listen(leave);
 
@@ -357,12 +378,18 @@ class RouteEnterEvent extends RouteEvent {
 }
 
 class RouteLeaveEvent extends RouteEvent {
-  final _allowLeaveFutures = <Future<bool>>[];
-
   RouteLeaveEvent(path, parameters, route)  : super(path, parameters, route);
 
+  RouteLeaveEvent _clone() => new RouteLeaveEvent(path, parameters, route);
+}
+
+class RoutePreLeaveEvent extends RouteEvent {
+  final _allowLeaveFutures = <Future<bool>>[];
+
+  RoutePreLeaveEvent(path, parameters, route)  : super(path, parameters, route);
+
   /**
-   * Can be called on enter with the future which will complete with a boolean
+   * Can be called with the future which will complete with a boolean
    * value allowing ([:true:]) or disallowing ([:false:]) the current
    * navigation.
    */
@@ -370,7 +397,7 @@ class RouteLeaveEvent extends RouteEvent {
     _allowLeaveFutures.add(allow);
   }
 
-  RouteLeaveEvent _clone() => new RouteLeaveEvent(path, parameters, route);
+  RoutePreLeaveEvent _clone() => new RoutePreLeaveEvent(path, parameters, route);
 }
 
 /**
@@ -458,71 +485,101 @@ class Router {
     var baseRoute = startingFrom == null ? root : _dehandle(startingFrom);
     _logger.finest('route $path $baseRoute');
     var treePath = _matchingTreePath(path, baseRoute);
-    var cmpBase = baseRoute;
-    var tail = path;
-    // Skip all routes that are unaffected by this path.
-    treePath = treePath.skipWhile((_Match matchedRoute) {
-      var skip = cmpBase._currentRoute == matchedRoute.route &&
-          !_paramsChanged(cmpBase, matchedRoute.urlMatch);
-      if (skip) {
-        cmpBase = matchedRoute.route;
-        tail = matchedRoute.urlMatch.tail;
+    var mustLeave = activePath;
+    var leaveBase = root;
+    for (var i = 0, ll = min(activePath.length, treePath.length); i < ll; i++) {
+      if (mustLeave.first == treePath[i].route &&
+          (treePath[i].route.dontLeaveOnParamChanges ||
+              !_paramsChanged(treePath[i].route, treePath[i].urlMatch))) {
+        mustLeave = mustLeave.skip(1);
+        leaveBase = leaveBase._currentRoute;
+      } else {
+        break;
       }
-      return skip;
-    }).toList();
+    }
+    return _preLeave(path, mustLeave, treePath, leaveBase);
+  }
 
-    if (treePath.isEmpty) return new Future.value(true);
+  Future<bool> _preLeave(String path, Iterable<Route> mustLeave,
+      List<_Match> treePath, Route leaveBase) {
+    // Reverse the list to ensure child is left before the parent.
+    mustLeave = mustLeave.toList().reversed;
 
-    var preEnterFutures = _preEnter(tail, treePath);
+    var preLeaving = <Future<bool>>[];
+    mustLeave.forEach((toLeave) {
+      var event = new RoutePreLeaveEvent('', {}, toLeave);
+      toLeave._onPreLeaveController.add(event);
+      preLeaving.addAll(event._allowLeaveFutures);
+    });
+    return Future.wait(preLeaving).then((List<bool> results) {
+      if (!results.any((r) => r == false)) {
+        _leave(mustLeave, leaveBase);
 
-    return Future.wait(preEnterFutures).then((List<bool> results) {
-      return results.any((v) => v == false)
-          ? false
-          : _processNewRoute(cmpBase, treePath, tail);
+        return _preEnter(path, treePath);
+      }
+      return new Future.value(false);
     });
   }
 
-  List<Future<bool>> _preEnter(String tail, List<_Match> treePath) {
+  void _leave(Iterable<Route> mustLeave, Route leaveBase) {
+    mustLeave.forEach((toLeave) {
+      var event = new RouteLeaveEvent('', {}, toLeave);
+      toLeave._onLeaveController.add(event);
+    });
+    if (!mustLeave.isEmpty) {
+      _unsetAllCurrentRoutesRecursively(leaveBase);
+    }
+  }
+
+  void _unsetAllCurrentRoutesRecursively(RouteImpl r) {
+    if (r._currentRoute != null) {
+      _unsetAllCurrentRoutesRecursively(r._currentRoute);
+      r._currentRoute = null;
+    }
+  }
+
+  Future<bool> _preEnter(String path, List<_Match> treePath) {
+    var toEnter = treePath;
+    var tail = path;
+    var enterBase = root;
+    for (var i = 0, ll = min(toEnter.length, activePath.length); i < ll; i++) {
+      if (toEnter.first.route == activePath[i] &&
+          !_paramsChanged(activePath[i], treePath[i].urlMatch)) {
+        tail = treePath[i].urlMatch.tail;
+        toEnter = toEnter.skip(1);
+        enterBase = enterBase._currentRoute;
+      } else {
+        break;
+      }
+    }
+    if (toEnter.isEmpty) {
+      return new Future.value(true);
+    }
+
     var preEnterFutures = <Future<bool>>[];
-    treePath.forEach((_Match matchedRoute) {
+    toEnter.forEach((_Match matchedRoute) {
       var preEnterEvent = new RoutePreEnterEvent._fromMatch(matchedRoute);
       matchedRoute.route._onPreEnterController.add(preEnterEvent);
       preEnterFutures.addAll(preEnterEvent._allowEnterFutures);
     });
-    return preEnterFutures;
-  }
-
-  Future<bool> _processNewRoute(Route startingFrom, List<_Match> treePath,
-      String path) {
-    return _leaveOldRoutes(startingFrom, treePath).then((bool allowed) {
-      if (allowed) {
-        var base = startingFrom;
-        treePath.forEach((_Match matchedRoute) {
-          var event = new RouteEnterEvent._fromMatch(matchedRoute);
-          _unsetAllCurrentRoutes(base);
-          base._currentRoute = matchedRoute.route;
-          base._currentRoute._lastEvent = event;
-          matchedRoute.route._onEnterController.add(event);
-          base = matchedRoute.route;
-        });
-        return true;
+    return Future.wait(preEnterFutures).then((List<bool> results) {
+      if (!results.any((v) => v == false)) {
+        _enter(enterBase, toEnter, tail);
+        return new Future.value(true);
       }
-      return false;
+      return new Future.value(false);
     });
   }
 
-  Future<bool> _leaveOldRoutes(RouteImpl startingFrom, List<_Match> treePath) {
-    if (treePath.isEmpty) return new Future.value(true);
-
-    var currentRoute = startingFrom._currentRoute;
-    if (currentRoute != null &&
-        currentRoute.dontLeaveOnParamChanges &&
-        identical(currentRoute, treePath.last.route)) {
-      return new Future.value(true);
-    }
-
-    var event = new RouteLeaveEvent('', {}, startingFrom);
-    return _leaveCurrentRoute(startingFrom, event);
+  _enter(RouteImpl startingFrom, Iterable<_Match> treePath, String path) {
+    var base = startingFrom;
+    treePath.forEach((_Match matchedRoute) {
+      var event = new RouteEnterEvent._fromMatch(matchedRoute);
+      base._currentRoute = matchedRoute.route;
+      base._currentRoute._lastEvent = event;
+      matchedRoute.route._onEnterController.add(event);
+      base = matchedRoute.route;
+    });
   }
 
   List _matchingRoutes(String path, RouteImpl baseRoute) {
@@ -560,9 +617,9 @@ class Router {
     return treePath;
   }
 
-  bool _paramsChanged(RouteImpl baseRoute, UrlMatch match) {
-    var lastEvent = baseRoute._currentRoute._lastEvent;
-    return lastEvent.path != match.match ||
+  bool _paramsChanged(RouteImpl route, UrlMatch match) {
+    var lastEvent = route._lastEvent;
+    return lastEvent == null || lastEvent.path != match.match ||
         !mapsShallowEqual(lastEvent.parameters, match.parameters);
   }
 
@@ -631,31 +688,6 @@ class Router {
     return (splitPoint == -1) ?
         [kvPair, '']
         : [kvPair.substring(0, splitPoint), kvPair.substring(splitPoint + 1)];
-  }
-
-  void _unsetAllCurrentRoutes(RouteImpl r) {
-    if (r._currentRoute != null) {
-      _unsetAllCurrentRoutes(r._currentRoute);
-      r._currentRoute = null;
-    }
-  }
-
-  Future<bool> _leaveCurrentRoute(RouteImpl base, RouteLeaveEvent e) =>
-      Future
-          .wait(_leaveCurrentRouteHelper(base, e))
-          .then((values) => values.fold(true, (c, v) => c && v));
-
-  List<Future<bool>> _leaveCurrentRouteHelper(RouteImpl base, RouteLeaveEvent e) {
-    var futures = [];
-    if (base._currentRoute != null) {
-      List<Future<bool>> pendingResponses = <Future<bool>>[];
-      // We create a copy of the route event
-      var event = e._clone();
-      base._currentRoute._onLeaveController.add(event);
-      futures..addAll(event._allowLeaveFutures)
-             ..addAll(_leaveCurrentRouteHelper(base._currentRoute, event));
-    }
-    return futures;
   }
 
   /**
@@ -756,4 +788,6 @@ class _Match {
   final UrlMatch urlMatch;
 
   _Match(this.route, this.urlMatch);
+
+  toString() => route.toString();
 }
