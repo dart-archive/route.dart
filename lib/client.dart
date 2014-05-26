@@ -517,6 +517,7 @@ class Router {
 
         return _preEnter(path, treePath);
       }
+      return new Future.value(false);
     });
   }
 
