@@ -497,35 +497,25 @@ class Router {
         break;
       }
     }
+    return _preLeave(path, mustLeave, treePath, leaveBase);
+  }
+
+  Future<bool> _preLeave(String path, Iterable<Route> mustLeave,
+      List<_Match> treePath, Route leaveBase) {
     // Reverse the list to ensure child is left before the parent.
     mustLeave = mustLeave.toList().reversed;
-    return _preLeave(mustLeave).then((List<bool> results) {
+
+    var preLeaving = <Future<bool>>[];
+    mustLeave.forEach((toLeave) {
+      var event = new RoutePreLeaveEvent('', {}, toLeave);
+      toLeave._onPreLeaveController.add(event);
+      preLeaving.addAll(event._allowLeaveFutures);
+    });
+    return Future.wait(preLeaving).then((List<bool> results) {
       if (!results.any((r) => r == false)) {
         _leave(mustLeave, leaveBase);
 
-        var toEnter = treePath;
-        var tail = path;
-        var enterBase = root;
-        for (var i = 0, ll = min(toEnter.length, activePath.length); i < ll; i++) {
-          if (toEnter.first.route == activePath[i] &&
-              !_paramsChanged(activePath[i], treePath[i].urlMatch)) {
-            tail = treePath[i].urlMatch.tail;
-            toEnter = toEnter.skip(1);
-            enterBase = enterBase._currentRoute;
-          } else {
-            break;
-          }
-        }
-        if (toEnter.isEmpty) {
-          return new Future.value(true);
-        }
-        return _preEnter(tail, toEnter).then((List<bool> results) {
-          if (!results.any((v) => v == false)) {
-            _processNewRoute(enterBase, toEnter, tail);
-            return new Future.value(true);
-          }
-          return new Future.value(false);
-        });
+        return _preEnter(path, treePath);
       }
     });
   }
@@ -536,31 +526,51 @@ class Router {
       toLeave._onLeaveController.add(event);
     });
     if (!mustLeave.isEmpty) {
-      _unsetAllCurrentRoutes(leaveBase);
+      _unsetAllCurrentRoutesRecursively(leaveBase);
     }
   }
 
-  Future<List<bool>> _preLeave(mustLeave) {
-    var preLeaving = <Future<bool>>[];
-    mustLeave.forEach((toLeave) {
-      var event = new RoutePreLeaveEvent('', {}, toLeave);
-      toLeave._onPreLeaveController.add(event);
-      preLeaving.addAll(event._allowLeaveFutures);
-    });
-    return Future.wait(preLeaving);
+  void _unsetAllCurrentRoutesRecursively(RouteImpl r) {
+    if (r._currentRoute != null) {
+      _unsetAllCurrentRoutesRecursively(r._currentRoute);
+      r._currentRoute = null;
+    }
   }
 
-  Future<List<bool>> _preEnter(String tail, Iterable<_Match> treePath) {
+  Future<bool> _preEnter(String path, List<_Match> treePath) {
+    var toEnter = treePath;
+    var tail = path;
+    var enterBase = root;
+    for (var i = 0, ll = min(toEnter.length, activePath.length); i < ll; i++) {
+      if (toEnter.first.route == activePath[i] &&
+          !_paramsChanged(activePath[i], treePath[i].urlMatch)) {
+        tail = treePath[i].urlMatch.tail;
+        toEnter = toEnter.skip(1);
+        enterBase = enterBase._currentRoute;
+      } else {
+        break;
+      }
+    }
+    if (toEnter.isEmpty) {
+      return new Future.value(true);
+    }
+
     var preEnterFutures = <Future<bool>>[];
-    treePath.forEach((_Match matchedRoute) {
+    toEnter.forEach((_Match matchedRoute) {
       var preEnterEvent = new RoutePreEnterEvent._fromMatch(matchedRoute);
       matchedRoute.route._onPreEnterController.add(preEnterEvent);
       preEnterFutures.addAll(preEnterEvent._allowEnterFutures);
     });
-    return Future.wait(preEnterFutures);
+    return Future.wait(preEnterFutures).then((List<bool> results) {
+      if (!results.any((v) => v == false)) {
+        _enter(enterBase, toEnter, tail);
+        return new Future.value(true);
+      }
+      return new Future.value(false);
+    });
   }
 
-  _processNewRoute(RouteImpl startingFrom, Iterable<_Match> treePath, String path) {
+  _enter(RouteImpl startingFrom, Iterable<_Match> treePath, String path) {
     var base = startingFrom;
     treePath.forEach((_Match matchedRoute) {
       var event = new RouteEnterEvent._fromMatch(matchedRoute);
@@ -677,13 +687,6 @@ class Router {
     return (splitPoint == -1) ?
         [kvPair, '']
         : [kvPair.substring(0, splitPoint), kvPair.substring(splitPoint + 1)];
-  }
-
-  void _unsetAllCurrentRoutes(RouteImpl r) {
-    if (r._currentRoute != null) {
-      _unsetAllCurrentRoutes(r._currentRoute);
-      r._currentRoute = null;
-    }
   }
 
   /**
