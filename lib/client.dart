@@ -530,7 +530,7 @@ class Router {
     });
   }
 
-  void _leave(List<Route> mustLeave, Route leaveBase) {
+  void _leave(Iterable<Route> mustLeave, Route leaveBase) {
     mustLeave.forEach((toLeave) {
       var event = new RouteLeaveEvent('', {}, toLeave);
       toLeave._onLeaveController.add(event);
