@@ -101,14 +101,6 @@ abstract class Route {
    * Returns a stream of [RouteLeaveEvent] events. The [RouteLeaveEvent]
    * event is fired when the route is being left. The event starts at the leaf
    * route and propagates from child to parent routes.
-   *
-   * At this stage it's possible to veto leaving of the route by calling
-   * [RouteLeaveEvent.allowLeave] with a [Future] returns a boolean value
-   * indicating whether leave is permitted (true) or not (false).
-   *
-   * Note: that once child routes have been notified of the leave they will not
-   * be notified of the subsequent veto by any parent route. See:
-   * https://github.com/angular/route.dart/issues/28
    */
   Stream<RouteLeaveEvent> get onLeave;
 
@@ -132,7 +124,7 @@ abstract class Route {
    * means that current route should contain route named 'foo', the 'foo' route
    * should contain route named 'bar', and so on.
    *
-   * If no match is found then [:null:] is returned.
+   * If no match is found then null is returned.
    */
   @Deprecated("use [findRoute] instead.")
   Route getRoute(String routePath);
@@ -144,7 +136,7 @@ abstract class Route {
    * means that current route should contain route named 'foo', the 'foo' route
    * should contain route named 'bar', and so on.
    *
-   * If no match is found then [:null:] is returned.
+   * If no match is found then null is returned.
    */
   Route findRoute(String routePath);
 
@@ -361,7 +353,7 @@ class RoutePreEnterEvent extends RouteEvent {
 
   /**
    * Can be called on enter with the future which will complete with a boolean
-   * value allowing ([:true:]) or disallowing ([:false:]) the current
+   * value allowing (true) or disallowing (false) the current
    * navigation.
    */
   void allowEnter(Future<bool> allow) {
@@ -370,7 +362,6 @@ class RoutePreEnterEvent extends RouteEvent {
 }
 
 class RouteEnterEvent extends RouteEvent {
-
   RouteEnterEvent(path, parameters, route)  : super(path, parameters, route);
 
   RouteEnterEvent._fromMatch(_Match m)
@@ -379,8 +370,6 @@ class RouteEnterEvent extends RouteEvent {
 
 class RouteLeaveEvent extends RouteEvent {
   RouteLeaveEvent(path, parameters, route)  : super(path, parameters, route);
-
-  RouteLeaveEvent _clone() => new RouteLeaveEvent(path, parameters, route);
 }
 
 class RoutePreLeaveEvent extends RouteEvent {
@@ -390,14 +379,12 @@ class RoutePreLeaveEvent extends RouteEvent {
 
   /**
    * Can be called with the future which will complete with a boolean
-   * value allowing ([:true:]) or disallowing ([:false:]) the current
+   * value allowing (true) or disallowing (false) the current
    * navigation.
    */
   void allowLeave(Future<bool> allow) {
     _allowLeaveFutures.add(allow);
   }
-
-  RoutePreLeaveEvent _clone() => new RoutePreLeaveEvent(path, parameters, route);
 }
 
 /**

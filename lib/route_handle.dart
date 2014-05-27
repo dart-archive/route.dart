@@ -1,8 +1,8 @@
 part of route.client;
 
 /**
- * A helper Router handle that scopes all route event subsriptions to it's
- * instance and provides an convinience [discard] method.
+ * A helper Router handle that scopes all route event subscriptions to it's
+ * instance and provides an convenience [discard] method.
  */
 class RouteHandle implements Route {
   Route _route;
