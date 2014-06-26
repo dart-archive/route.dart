@@ -617,6 +617,73 @@ main() {
       }));
     });
 
+    test('should not leave leaving when on preEnter fails', () {
+      var counters = <String, int>{
+          'fooPreEnter': 0,
+          'fooPreLeave': 0,
+          'fooEnter': 0,
+          'fooLeave': 0,
+          'barPreEnter': 0,
+          'barPreLeave': 0,
+          'barEnter': 0,
+          'barLeave': 0
+      };
+      var router = new Router();
+      router.root
+        ..addRoute(path: r'/foo',
+            name: 'foo',
+            preEnter: (_) => counters['fooPreEnter']++,
+            preLeave: (_) => counters['fooPreLeave']++,
+            enter: (_) => counters['fooEnter']++,
+            leave: (_) => counters['fooLeave']++)
+        ..addRoute(path: '/bar',
+            name: 'bar',
+            preEnter: (RoutePreEnterEvent e) {
+              counters['barPreEnter']++;
+              e.allowEnter(new Future<bool>.value(false));
+            },
+            preLeave: (_) => counters['barPreLeave']++,
+            enter: (_) => counters['barEnter']++,
+            leave: (_) => counters['barLeave']++);
+
+      expect(counters, {
+          'fooPreEnter': 0,
+          'fooPreLeave': 0,
+          'fooEnter': 0,
+          'fooLeave': 0,
+          'barPreEnter': 0,
+          'barPreLeave': 0,
+          'barEnter': 0,
+          'barLeave': 0
+      });
+
+      router.route('/foo').then(expectAsync((_) {
+        expect(counters, {
+            'fooPreEnter': 1, // +1
+            'fooPreLeave': 0,
+            'fooEnter': 1,    // +1
+            'fooLeave': 0,
+            'barPreEnter': 0,
+            'barPreLeave': 0,
+            'barEnter': 0,
+            'barLeave': 0
+        });
+
+        router.route('/bar').then(expectAsync((_) {
+          expect(counters, {
+              'fooPreEnter': 1,
+              'fooPreLeave': 1, // +1
+              'fooEnter': 1,
+              'fooLeave': 0,    // can't leave
+              'barPreEnter': 1, // +1, enter but don't proceed
+              'barPreLeave': 0,
+              'barEnter': 0,
+              'barLeave': 0
+          });
+        }));
+      }));
+    });
+
   });
 
   group('Default route', () {
