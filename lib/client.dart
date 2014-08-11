@@ -483,11 +483,12 @@ class Router {
 
   Future<bool> _route(String path, Route startingFrom) {
     var baseRoute = startingFrom == null ? root : _dehandle(startingFrom);
-    _logger.finest('route $path $baseRoute');
+    var trimmedActivePath = startingFrom != null ?
+        activePath.skip(activePath.indexOf(baseRoute) + 1).toList() : activePath;
     var treePath = _matchingTreePath(path, baseRoute);
-    var mustLeave = activePath;
+    var mustLeave = trimmedActivePath;
     var leaveBase = root;
-    for (var i = 0, ll = min(activePath.length, treePath.length); i < ll; i++) {
+    for (var i = 0, ll = min(trimmedActivePath.length, treePath.length); i < ll; i++) {
       if (mustLeave.first == treePath[i].route &&
           (treePath[i].route.dontLeaveOnParamChanges ||
               !_paramsChanged(treePath[i].route, treePath[i].urlMatch))) {
@@ -497,11 +498,12 @@ class Router {
         break;
       }
     }
-    return _preLeave(path, mustLeave, treePath, leaveBase);
+    return _preLeave(path, mustLeave, treePath, leaveBase, trimmedActivePath, baseRoute);
   }
 
   Future<bool> _preLeave(String path, Iterable<Route> mustLeave,
-      List<_Match> treePath, Route leaveBase) {
+      List<_Match> treePath, Route leaveBase, List<RouteImpl> activePath,
+      RouteImpl baseRoute) {
     // Reverse the list to ensure child is left before the parent.
     mustLeave = mustLeave.toList().reversed;
 
@@ -515,7 +517,7 @@ class Router {
       if (!results.any((r) => r == false)) {
         _leave(mustLeave, leaveBase);
 
-        return _preEnter(path, treePath);
+        return _preEnter(path, treePath, activePath, baseRoute);
       }
       return new Future.value(false);
     });
@@ -538,10 +540,11 @@ class Router {
     }
   }
 
-  Future<bool> _preEnter(String path, List<_Match> treePath) {
+  Future<bool> _preEnter(String path, List<_Match> treePath,
+      List<Route> activePath, RouteImpl baseRoute) {
     var toEnter = treePath;
     var tail = path;
-    var enterBase = root;
+    var enterBase = baseRoute;
     for (var i = 0, ll = min(toEnter.length, activePath.length); i < ll; i++) {
       if (toEnter.first.route == activePath[i] &&
           !_paramsChanged(activePath[i], treePath[i].urlMatch)) {

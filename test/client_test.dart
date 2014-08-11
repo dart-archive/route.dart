@@ -1128,6 +1128,46 @@ main() {
       });
     });
 
+    test('should currectly identify active path after relative go', () {
+      var mockWindow = new MockWindow();
+      var router = new Router(windowImpl: mockWindow);
+      router.root
+        ..addRoute(
+            name: 'foo',
+            path: '/foo',
+            mount: (child) => child
+            ..addRoute(
+                name: 'bar',
+                path: '/bar',
+                mount: (child) => child
+                ..addRoute(
+                    name: 'baz',
+                    path: '/baz',
+                    mount: (child) => child))
+            ..addRoute(
+                name: 'qux',
+                path: '/qux',
+                mount: (child) => child
+                ..addRoute(
+                    name: 'aux',
+                    path: '/aux',
+                    mount: (child) => child)));
+
+      var strPath = (List<Route> path) =>
+          path.map((Route r) => r.name).join('.');
+
+      expect(strPath(router.activePath), '');
+
+      return router.route('/foo').then((_) {
+        expect(strPath(router.activePath), 'foo');
+
+        var foo = router.findRoute('foo');
+        return router.go('bar', {}, startingFrom: foo).then((_) {
+          expect(strPath(router.activePath), 'foo.bar');
+        });
+      });
+    });
+
   });
 
   group('listen', () {
