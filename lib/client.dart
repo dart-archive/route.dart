@@ -487,7 +487,7 @@ class Router {
         activePath.skip(activePath.indexOf(baseRoute) + 1).toList() : activePath;
     var treePath = _matchingTreePath(path, baseRoute);
     var mustLeave = trimmedActivePath;
-    var leaveBase = root;
+    var leaveBase = baseRoute;
     for (var i = 0, ll = min(trimmedActivePath.length, treePath.length); i < ll; i++) {
       if (mustLeave.first == treePath[i].route &&
           (treePath[i].route.dontLeaveOnParamChanges ||
