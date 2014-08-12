@@ -436,7 +436,7 @@ main() {
       _testAllowEnter(false);
     });
 
-    test('should allow prevent leaving on parameter changes', () {
+    test('should leave on parameters changes when dontLeaveOnParamChanges is false (default)', () {
       var counters = <String, int>{
         'fooPreEnter': 0,
         'fooPreLeave': 0,
@@ -472,6 +472,8 @@ main() {
         'barEnter': 0,
         'barLeave': 0
       });
+
+      expect(router.findRoute('foo').dontLeaveOnParamChanges, false);
 
       router.route('/foo/bar').then(expectAsync((_) {
         expect(counters, {
@@ -526,7 +528,7 @@ main() {
       }));
     });
 
-    test('should not leave leaving on when dontLeaveOnParamChanges', () {
+    test('should not leave on parameter changes when dontLeaveOnParamChanges is true', () {
       var counters = <String, int>{
         'fooPreEnter': 0,
         'fooPreLeave': 0,
