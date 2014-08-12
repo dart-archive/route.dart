@@ -515,9 +515,9 @@ class Router {
     });
     return Future.wait(preLeaving).then((List<bool> results) {
       if (!results.any((r) => r == false)) {
-        _leave(mustLeave, leaveBase);
+        var leaveFn = ()  =>_leave(mustLeave, leaveBase);
 
-        return _preEnter(path, treePath, activePath, baseRoute);
+        return _preEnter(path, treePath, activePath, baseRoute, leaveFn);
       }
       return new Future.value(false);
     });
@@ -541,7 +541,7 @@ class Router {
   }
 
   Future<bool> _preEnter(String path, List<_Match> treePath,
-      List<Route> activePath, RouteImpl baseRoute) {
+      List<Route> activePath, RouteImpl baseRoute, Function leaveFn) {
     var toEnter = treePath;
     var tail = path;
     var enterBase = baseRoute;
@@ -556,6 +556,7 @@ class Router {
       }
     }
     if (toEnter.isEmpty) {
+      leaveFn();
       return new Future.value(true);
     }
 
@@ -567,6 +568,7 @@ class Router {
     });
     return Future.wait(preEnterFutures).then((List<bool> results) {
       if (!results.any((v) => v == false)) {
+        leaveFn();
         _enter(enterBase, toEnter, tail);
         return new Future.value(true);
       }
