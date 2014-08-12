@@ -104,7 +104,7 @@ class RouteHandle implements Route {
 
   dynamic _assertState([f()]) {
     if (_route == null) {
-      throw new StateError('This route handle is already discated.');
+      throw new StateError('This route handle is already discarded.');
     }
     return f == null ? null : f();
   }
