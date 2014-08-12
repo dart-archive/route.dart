@@ -1,6 +1,7 @@
 library route.link_matcher_test;
 
 import 'dart:html';
+import 'dart:async';
 import 'package:unittest/unittest.dart';
 import 'package:mock/mock.dart';
 import 'package:route_hierarchical/click_handler.dart';
@@ -14,19 +15,27 @@ main() {
 
     WindowClickHandler linkHandler;
     MockRouter router;
-    Element toRemove;
+    MockWindow mockWindow;
+    Element root;
+    StreamController onHashChangeController;
 
     setUp(() {
       router = new MockRouter();
-      linkHandler = new DefaultWindowClickHandler(new DefaultRouterLinkMatcher(), router, true, window,
+      mockWindow = new MockWindow();
+      mockWindow.location.when(callsTo('get host'))
+          .alwaysReturn(window.location.host);
+      mockWindow.location.when(callsTo('get hash')).alwaysReturn('');
+      onHashChangeController = new StreamController();
+      mockWindow.when(callsTo('get onHashChange'))
+          .alwaysReturn(onHashChangeController.stream);
+      root = new DivElement();
+      document.body.append(root);
+      linkHandler = new DefaultWindowClickHandler(new DefaultRouterLinkMatcher(), router, true, mockWindow,
           (String hash) => hash.isEmpty ? '' : hash.substring(1));
     });
 
     tearDown(() {
-      if (toRemove != null) {
-        toRemove.remove();
-        toRemove = null;
-      }
+      root.remove();
     });
 
     MouseEvent _createMockMouseEvent({String anchorTarget, String anchorHref}) {
@@ -40,7 +49,7 @@ main() {
       return mockMouseEvent;
     }
 
-    test('it should process AnchorElements which have target set', () {
+    test('should process AnchorElements which have target set', () {
       MockMouseEvent mockMouseEvent = _createMockMouseEvent(anchorHref: '#test');
       linkHandler(mockMouseEvent);
       LogEntryList logEntries = router.getLogs(callsTo('gotoUrl'));
@@ -48,7 +57,7 @@ main() {
       expect(logEntries.logs.first.args.contains("test"), isTrue);
     });
 
-    test('it should process AnchorElements which has target set to _blank, _self, _top or _parent', () {
+    test('should process AnchorElements which has target set to _blank, _self, _top or _parent', () {
       MockMouseEvent mockMouseEvent = _createMockMouseEvent(anchorHref: '#test',
           anchorTarget: '_blank');
       linkHandler(mockMouseEvent);
@@ -70,7 +79,7 @@ main() {
       expect(logEntries.logs.length, 0);
     });
 
-    test('it should process AnchorElements which has a child', () {
+    test('should process AnchorElements which has a child', () {
       Element anchorChild = new DivElement();
 
       AnchorElement anchor = new AnchorElement();
@@ -87,27 +96,29 @@ main() {
       expect(logEntries.logs.first.args.contains("test"), isTrue);
     });
 
-    test('it should be called if event triggerd on anchor element', () {
+    test('should be called if event triggerd on anchor element', () {
       AnchorElement anchor = new AnchorElement();
       anchor.href = '#test';
-      document.body.append(toRemove = anchor);
+      root.append(anchor);
 
-      var router = new Router(useFragment: true, clickHandler: expectAsync((e) {}));
-      router.listen();
+      var router = new Router(useFragment: true,
+          clickHandler: expectAsync((e) {}), windowImpl: mockWindow);
+      router.listen(appRoot: root);
 
       // Trigger handle method in linkHandler
       anchor.dispatchEvent(new MouseEvent('click'));
     });
 
-    test('it should be called if event triggerd on child of an anchor element', () {
+    test('should be called if event triggerd on child of an anchor element', () {
       Element anchorChild = new DivElement();
       AnchorElement anchor = new AnchorElement();
       anchor.href = '#test';
       anchor.append(anchorChild);
-      document.body.append(toRemove = anchor);
+      root.append(anchor);
 
-      var router = new Router(useFragment: true, clickHandler: expectAsync((e) {}));
-      router.listen();
+      var router = new Router(useFragment: true,
+          clickHandler: expectAsync((e) {}), windowImpl: mockWindow);
+      router.listen(appRoot: root);
 
       // Trigger handle method in linkHandler
       anchorChild.dispatchEvent(new MouseEvent('click'));
