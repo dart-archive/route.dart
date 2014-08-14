@@ -1,37 +1,53 @@
 #!/bin/bash
-set -e
+set -e -o pipefail
 
-if [ -n "$DART_SDK" ]; then
-    DARTSDK=$DART_SDK
-else
-    echo "sdk=== $DARTSDK"
-    DART=`which dart|cat` # pipe to cat to ignore the exit code
-    DARTSDK=`which dart | sed -e 's/\/dart\-sdk\/.*$/\/dart-sdk/'`
+PLATFORM="$(uname -s)"
 
-    if [ "$DARTSDK" = "/Applications/dart/dart-sdk" ]; then
-        # Assume we are a mac machine with standard dart setup
-        export DARTIUM="/Applications/dart/chromium/Chromium.app/Contents/MacOS/Chromium"
-    else
-        DARTSDK="`pwd`/dart-sdk"
-        case $( uname -s ) in
-          Darwin)
-            export DARTIUM=${DARTIUM:-./dartium/Chromium.app/Contents/MacOS/Chromium}
-            ;;
-          Linux)
-            export DARTIUM=${DARTIUM:-./dartium/chrome}
-            ;;
-        esac
-    fi
+# Try to find the SDK alongside the dart command first.
+if [[ -z "$DART_SDK" ]]; then
+DART=$(which dart) || true
+if [[ -x "$DART" ]]; then
+  DART_SDK="${DART/dart-sdk\/*/dart-sdk}"
+  if [[ ! -e "$DART_SDK" ]]; then
+    unset DART DART_SDK
+  fi
+fi
+fi
+# Fallback: Assume it's alongside the current directory (e.g. Travis).
+if [[ -z "$DART_SDK" ]]; then
+DART_SDK="$(pwd)/dart-sdk"
 fi
 
-export DART_SDK="$DARTSDK"
-export DART=${DART:-"$DARTSDK/bin/dart"}
-export PUB=${PUB:-"$DARTSDK/bin/pub"}
-export DARTANALYZER=${DARTANALYZER:-"$DARTSDK/bin/dartanalyzer"}
-export DARTDOC=${DARTDOC:-"$DARTSDK/bin/dartdoc"}
-export DART_DOCGEN=${DART_DOCGEN:-"$DARTSDK/bin/docgen"}
+: "${DART:=$DART_SDK/bin/dart}"
 
-export CHROME_CANARY_BIN=${CHROME_CANARY_BIN:-"$DARTIUM"}
-export CHROME_BIN=${CHROME_BIN:-"google-chrome"}
-export DART_FLAGS='--enable_type_checks --enable_asserts'
-export PATH=$PATH:$DARTSDK/bin
+if [[ ! -x "$DART" ]]; then
+echo Unable to locate the dart binary / SDK. Exiting >&2
+exit 3
+fi
+
+DARTIUMROOT="$DART_SDK/../chromium"
+if [[ -e $DARTIUMROOT ]]; then
+  case "$PLATFORM" in
+    (Linux) export DARTIUM="$DARTIUMROOT/chrome" ;;
+    (Darwin) export DARTIUM="$DARTIUMROOT/Chromium.app/Contents/MacOS/Chromium" ;;
+    (*) echo Unsupported platform $PLATFORM.  Exiting ... >&2 ; exit 3 ;;
+  esac
+fi
+
+export DART_SDK
+export DART
+export PUB=${PUB:-"$DART_SDK/bin/pub"}
+export DARTANALYZER=${DARTANALYZER:-"$DART_SDK/bin/dartanalyzer"}
+export DARTIUM_BIN=${DARTIUM_BIN:-"$DARTIUM"}
+export PATH=$PATH:$DART_SDK/bin
+
+echo '*********'
+echo '** ENV **'
+echo '*********'
+echo DART_SDK=$DART_SDK
+echo DART=$DART
+echo PUB=$PUB
+echo DARTANALYZER=$DARTANALYZER
+echo DARTIUM_BIN=$DARTIUM_BIN
+echo PATH=$PATH
+$DART --version 2>&1
