@@ -109,6 +109,6 @@ main() {
       new UrlMatch('/foo/123/456/baz', '', {
           'bar*': '123/456'
       }));
-    });url_template.dart
+    });
   });
 }
