@@ -1,8 +1,16 @@
-# v0.5.1
+# v0.6.0
 
 ## Features
 
-- `Router.route` now supports reloading from the base route via the optional `reloadFromBase` parameter. 
+Introduced `reload({startingFrom})` method which allows to force reload currently active routes.
+
+BREAKING CHANGE:
+The router no longer requires prefixing query param names with route name.
+By default all query param changes will trigger route reload, but you can provide
+a list of param patterns (via watchQueryParameters named param on addRoute) which
+will be used to match (prefix match) param names that trigger route reloading. 
+A short-hand for "I don't care about any parameters, never reload" is
+`watchQueryParameters: []`.
 
 
 # v0.5.0
