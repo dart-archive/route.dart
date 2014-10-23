@@ -354,16 +354,6 @@ class RouteImpl extends Route {
   }
 }
 
-
-/// Populates the [queryParams] map from the [parameters] which name start with
-/// the route name and are not route parameters.
-void _populateQueryParams(Map parameters, Route route, Map queryParams) {
-  parameters.keys.forEach((String key) {
-    queryParams[key] = parameters[key];
-  });
-}
-
-
 /**
  * Route enter or leave event.
  */
