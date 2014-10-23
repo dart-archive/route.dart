@@ -277,7 +277,8 @@ class RouteImpl extends Route {
     for (RouteImpl route = this; route.parent != null; route = route.parent) {
       var currentRoute = route.parent._currentRoute;
       if (currentRoute == null) {
-        throw new StateError('Route ${route.parent.name} has no current route.');
+        throw new StateError(
+            'Route ${route.parent.name} has no current route.');
       }
 
       tail = currentRoute._reverse(tail);
@@ -336,7 +337,8 @@ class RouteImpl extends Route {
   @override
   Map get parameters {
     if (isActive) {
-      return _lastEvent == null ? const {} : new Map.from(_lastEvent.parameters);
+      return _lastEvent == null ?
+          const {} : new Map.from(_lastEvent.parameters);
     }
     return null;
   }
@@ -348,7 +350,8 @@ class RouteImpl extends Route {
   @override
   Map get queryParameters {
     if (isActive) {
-      return _lastEvent == null ? const {} : new Map.from(_lastEvent.queryParameters);
+      return _lastEvent == null ?
+          const {} : new Map.from(_lastEvent.queryParameters);
     }
     return null;
   }
@@ -369,7 +372,8 @@ abstract class RouteEvent {
 class RoutePreEnterEvent extends RouteEvent {
   final _allowEnterFutures = <Future<bool>>[];
 
-  RoutePreEnterEvent(path, parameters, queryParameters, route)  : super(path, parameters, queryParameters, route);
+  RoutePreEnterEvent(path, parameters, queryParameters, route)
+      : super(path, parameters, queryParameters, route);
 
   RoutePreEnterEvent._fromMatch(_Match m)
       : this(m.urlMatch.tail, m.urlMatch.parameters, {}, m.route);
@@ -388,7 +392,8 @@ class RouteEnterEvent extends RouteEvent {
       : super(path, parameters, queryParameters, route);
 
   RouteEnterEvent._fromMatch(_Match m)
-      : this(m.urlMatch.match, m.urlMatch.parameters, m.queryParameters, m.route);
+      : this(m.urlMatch.match, m.urlMatch.parameters,
+          m.queryParameters, m.route);
 }
 
 class RouteLeaveEvent extends RouteEvent {
@@ -455,7 +460,8 @@ class Router {
   Router({bool useFragment, Window windowImpl, bool sortRoutes: true,
          RouterLinkMatcher linkMatcher, WindowClickHandler clickHandler})
       : this._init(null, useFragment: useFragment, windowImpl: windowImpl,
-          sortRoutes: sortRoutes, linkMatcher: linkMatcher, clickHandler: clickHandler);
+          sortRoutes: sortRoutes, linkMatcher: linkMatcher,
+          clickHandler: clickHandler);
 
 
   Router._init(Router parent, {bool useFragment, Window windowImpl,
@@ -492,8 +498,13 @@ class Router {
    * This method does not perform any navigation, [go] should be used for that.
    * This method is used to invoke a handler after some other code navigates the
    * window, such as [listen].
+   *
+   * Setting [forceReload] to true (default false) will force the matched routes
+   * to reload, even if they are already active and none of the parameters
+   * changed.
    */
-  Future<bool> route(String path, {Route startingFrom, bool forceReload: false}) {
+  Future<bool> route(String path, {Route startingFrom,
+      bool forceReload: false}) {
     var baseRoute;
     var trimmedActivePath;
     if (startingFrom == null) {
@@ -507,7 +518,8 @@ class Router {
     var treePath = _matchingTreePath(path, baseRoute);
     // Figure out the list of routes that will be leaved
     var mustLeave = trimmedActivePath;
-    var future = _preLeave(path, treePath, trimmedActivePath, baseRoute, forceReload);
+    var future =
+        _preLeave(path, treePath, trimmedActivePath, baseRoute, forceReload);
     _onRouteStart.add(new RouteStartEvent._new(path, future));
     return future;
   }
@@ -517,8 +529,8 @@ class Router {
    *
    * If none of the preLeave listeners veto the leave, chain call [_preEnter].
    *
-   * If at least one preLeave listeners veto the leave, returns a Future that will resolve to
-   * false. The current route will not change.
+   * If at least one preLeave listeners veto the leave, returns a Future that
+   * will resolve to false. The current route will not change.
    */
   Future<bool> _preLeave(String path, List<_Match> treePath,
       List<RouteImpl> activePath, RouteImpl baseRoute, bool forceReload) {
@@ -526,8 +538,8 @@ class Router {
     var leaveBase = baseRoute;
     for (var i = 0, ll = min(activePath.length, treePath.length); i < ll; i++) {
       if (mustLeave.first == treePath[i].route &&
-          (treePath[i].route.dontLeaveOnParamChanges ||
-              !(forceReload || _paramsChanged(treePath[i].route, treePath[i])))) {
+          (treePath[i].route.dontLeaveOnParamChanges || !(forceReload ||
+              _paramsChanged(treePath[i].route, treePath[i])))) {
         mustLeave = mustLeave.skip(1);
         leaveBase = leaveBase._currentRoute;
       } else {
@@ -546,8 +558,8 @@ class Router {
     return Future.wait(preLeaving).then((List<bool> results) {
       if (!results.any((r) => r == false)) {
         var leaveFn = () => _leave(mustLeave, leaveBase);
-
-        return _preEnter(path, treePath, activePath, baseRoute, leaveFn, forceReload);
+        return _preEnter(path, treePath, activePath, baseRoute, leaveFn,
+            forceReload);
       }
       return new Future.value(false);
     });
@@ -661,11 +673,14 @@ class Router {
            lastEvent.path != match.urlMatch.match ||
            !mapsShallowEqual(lastEvent.parameters, match.urlMatch.parameters) ||
            !mapsShallowEqual(
-               _filterQueryParams(lastEvent.queryParameters, route._watchQueryParameters),
-               _filterQueryParams(match.queryParameters, route._watchQueryParameters));
+               _filterQueryParams(
+                   lastEvent.queryParameters, route._watchQueryParameters),
+               _filterQueryParams(
+                   match.queryParameters, route._watchQueryParameters));
   }
 
-  Map _filterQueryParams(Map queryParameters, List<Pattern> watchQueryParameters) {
+  Map _filterQueryParams(Map queryParameters,
+                         List<Pattern> watchQueryParameters) {
     if (watchQueryParameters == null) {
       return queryParameters;
     }
@@ -710,7 +725,8 @@ class Router {
   }
 
   /// Returns an absolute URL for a given relative route path and parameters.
-  String url(String routePath, {Route startingFrom, Map parameters, Map queryParameters}) {
+  String url(String routePath, {Route startingFrom, Map parameters,
+      Map queryParameters}) {
     var baseRoute = startingFrom == null ? root : _dehandle(startingFrom);
     parameters = parameters == null ? {} : parameters;
     var tail = baseRoute._getTailUrl(routePath, parameters);
@@ -754,7 +770,10 @@ class Router {
     return params;
   }
 
-  /// Parse a key value pair (`"key=value"`) and returns a `["key", "value"]` `List`
+  /**
+   * Parse a key value pair (`"key=value"`) and returns a list of
+   * `["key", "value"]`.
+   */
   List<String> _parseKeyVal(String kvPair) {
     if (kvPair.isEmpty) {
       return const ['', ''];
