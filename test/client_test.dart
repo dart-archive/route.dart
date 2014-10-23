@@ -1373,7 +1373,7 @@ main() {
           ..addRoute(
               name: 'foo',
               path: '/:foo',
-              watchQueryParameters: [new RegExp('')],
+              watchQueryParameters: [new RegExp(r'^foo$')],
               leave: (_) => counters['fooLeave']++,
               enter: (_) => counters['fooEnter']++);
 
