@@ -2,7 +2,8 @@
 
 ## Features
 
-Introduced `reload({startingFrom})` method which allows to force reload currently active routes.
+- Introduced `reload({startingFrom})` method which allows to force reload currently active routes.
+- UrlPattern now support paramerter values that contain slashes (`/foo/:bar*` which will fully match `/foo/bar/baz`)
 
 BREAKING CHANGE:
 The router no longer requires prefixing query param names with route name.
