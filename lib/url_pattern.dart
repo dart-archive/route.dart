@@ -79,7 +79,9 @@ UrlPattern urlPattern(String p) => new UrlPattern(p);
  *     pattern.matches('/app#profile/1234'); // true
  *     pattern.reverse([1234], useFragment: true); // /app#profile/1234
  *     pattern.reverse([1234], useFragment: false); // /app/profile/1234
+ *
  */
+@deprecated
 class UrlPattern implements UrlMatcher, Pattern {
   final String pattern;
   RegExp _regex;
