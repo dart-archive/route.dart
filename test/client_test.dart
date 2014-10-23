@@ -991,35 +991,35 @@ main() {
                   path: '/edit',
                   enter: (_) => counters['article_123_edit_entered']++));
 
-      router.route('').then((_) {
+      return router.route('').then((_) {
         expect(counters, {
           'list_entered': 1, // default to list
           'article_123_entered': 0,
           'article_123_view_entered': 0,
           'article_123_edit_entered': 0
         });
-        router.route('/articles').then((_) {
+        return router.route('/articles').then((_) {
           expect(counters, {
             'list_entered': 2,
             'article_123_entered': 0,
             'article_123_view_entered': 0,
             'article_123_edit_entered': 0
           });
-          router.route('/article/123').then((_) {
+          return router.route('/article/123').then((_) {
             expect(counters, {
               'list_entered': 2,
               'article_123_entered': 1,
               'article_123_view_entered': 1, // default to view
               'article_123_edit_entered': 0
             });
-            router.route('/article/123/view').then((_) {
+            return router.route('/article/123/view').then((_) {
               expect(counters, {
                 'list_entered': 2,
                 'article_123_entered': 1,
                 'article_123_view_entered': 2,
                 'article_123_edit_entered': 0
               });
-              router.route('/article/123/edit').then((_) {
+              return router.route('/article/123/edit').then((_) {
                 expect(counters, {
                   'list_entered': 2,
                   'article_123_entered': 1,
@@ -1326,7 +1326,7 @@ main() {
             'fooLeave': 0,
             'fooEnter': 1,
           });
-          router.route('/123?foo=bar').then((_) {
+          return router.route('/123?foo=bar').then((_) {
             expect(counters, {
               'fooLeave': 0,
               'fooEnter': 1,
@@ -1354,7 +1354,7 @@ main() {
             'fooLeave': 0,
             'fooEnter': 1,
           });
-          router.route('/123?foo=bar').then((_) {
+          return router.route('/123?foo=bar').then((_) {
             expect(counters, {
               'fooLeave': 1,
               'fooEnter': 2,
@@ -1382,7 +1382,7 @@ main() {
             'fooLeave': 0,
             'fooEnter': 1,
           });
-          router.route('/123?foo=bar').then((_) {
+          return router.route('/123?foo=bar').then((_) {
             expect(counters, {
               'fooLeave': 1,
               'fooEnter': 2,
