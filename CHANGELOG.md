@@ -1,3 +1,9 @@
+# v0.6.1
+
+## Features
+
+- Added forceReload param to `Router.go` which forces reloading of already active routes.
+
 # v0.6.0
 
 ## Features
