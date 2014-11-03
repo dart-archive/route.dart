@@ -505,6 +505,8 @@ class Router {
    */
   Future<bool> route(String path, {Route startingFrom,
       bool forceReload: false}) {
+    _logger.finest('route path=$path startingFrom=$startingFrom '
+        'forceReload=$forceReload');
     var baseRoute;
     var trimmedActivePath;
     if (startingFrom == null) {
@@ -709,19 +711,20 @@ class Router {
   }
 
   /// Navigates to a given relative route path, and parameters.
-  Future<bool> go(String routePath, Map parameters,
-            {Route startingFrom, bool replace: false, Map queryParameters}) {
+  Future<bool> go(String routePath, Map parameters, {Route startingFrom,
+       bool replace: false, Map queryParameters, bool forceReload: false}) {
     RouteImpl baseRoute = startingFrom == null ? root : _dehandle(startingFrom);
     var newTail = baseRoute._getTailUrl(routePath, parameters) +
         _buildQuery(queryParameters);
     String newUrl = baseRoute._getHead(newTail);
     _logger.finest('go $newUrl');
-    return route(newTail, startingFrom: baseRoute).then((success) {
-      if (success) {
-        _go(newUrl, null, replace);
-      }
-      return success;
-    });
+    return route(newTail, startingFrom: baseRoute, forceReload: forceReload)
+        .then((success) {
+          if (success) {
+            _go(newUrl, null, replace);
+          }
+          return success;
+        });
   }
 
   /// Returns an absolute URL for a given relative route path and parameters.

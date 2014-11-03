@@ -1197,6 +1197,52 @@ main() {
       });
     });
 
+    test('should force reload already active routes', () {
+      var counters = <String, int>{
+        'aEnter': 0,
+        'bEnter': 0
+      };
+
+      var mockWindow = new MockWindow();
+      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
+      var router = new Router(windowImpl: mockWindow);
+      router.root
+        ..addRoute(
+            name: 'a',
+            path: '/foo',
+            enter: (_) => counters['aEnter']++,
+            mount: (child) => child
+              ..addRoute(
+                  name: 'b',
+                  path: '/bar',
+                  enter: (_) => counters['bEnter']++));
+
+      expect(counters, {
+        'aEnter': 0,
+        'bEnter': 0
+      });
+
+      return router.go('a.b', {}).then((_) {
+        expect(counters, {
+          'aEnter': 1,
+          'bEnter': 1
+        });
+        return router.go('a.b', {}).then((_) {
+          // didn't force reload, so should not change
+          expect(counters, {
+            'aEnter': 1,
+            'bEnter': 1
+          });
+          return router.go('a.b', {}, forceReload: true).then((_) {
+            expect(counters, {
+              'aEnter': 2,
+              'bEnter': 2
+            });
+          });
+        });
+      });
+    });
+
   });
 
   group('url', () {
