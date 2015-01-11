@@ -651,7 +651,7 @@ class Router {
       List matchingRoutes = _matchingRoutes(path, baseRoute);
       if (matchingRoutes.isNotEmpty) {
         if (matchingRoutes.length > 1) {
-          _logger.warning("More than one route matches $path $matchingRoutes");
+          _logger.fine("More than one route matches $path $matchingRoutes");
         }
         matchedRoute = matchingRoutes.first;
       } else {
