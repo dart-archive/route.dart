@@ -67,8 +67,8 @@ class RouteHandle implements Route {
   @override
   void addRoute({String name, Pattern path, bool defaultRoute: false,
       RouteEnterEventHandler enter, RoutePreEnterEventHandler preEnter,
-      RoutePreLeaveEventHandler preLeave,RouteLeaveEventHandler leave,
-      mount, dontLeaveOnParamChanges: false,
+      RoutePreLeaveEventHandler preLeave, RouteLeaveEventHandler leave,
+      mount, dontLeaveOnParamChanges: false, String pageTitle,
       List<Pattern> watchQueryParameters}) {
     throw new UnsupportedError('addRoute is not supported in handle');
   }
@@ -133,6 +133,10 @@ class RouteHandle implements Route {
   /// See [Route.dontLeaveOnParamChanges]
   @override
   bool get dontLeaveOnParamChanges => _route.dontLeaveOnParamChanges;
+
+  /// See [Route.title]
+  @override
+  String get pageTitle => _route.pageTitle;
 
   @override
   Map get queryParameters => _route.queryParameters;
