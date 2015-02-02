@@ -188,15 +188,15 @@ class RouteImpl extends Route {
 
   @override
   @Deprecated("use [onEnter] instead.")
-  Stream<RouteEvent> get onRoute => onEnter;
+  Stream<RouteEnterEvent> get onRoute => onEnter;
   @override
-  Stream<RouteEvent> get onPreEnter => _onPreEnterController.stream;
+  Stream<RoutePreEnterEvent> get onPreEnter => _onPreEnterController.stream;
   @override
-  Stream<RouteEvent> get onPreLeave => _onPreLeaveController.stream;
+  Stream<RoutePreLeaveEvent> get onPreLeave => _onPreLeaveController.stream;
   @override
-  Stream<RouteEvent> get onLeave => _onLeaveController.stream;
+  Stream<RouteLeaveEvent> get onLeave => _onLeaveController.stream;
   @override
-  Stream<RouteEvent> get onEnter => _onEnterController.stream;
+  Stream<RouteEnterEvent> get onEnter => _onEnterController.stream;
 
   RouteImpl._new({this.name, this.path, this.parent,
                  this.dontLeaveOnParamChanges: false,

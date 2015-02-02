@@ -46,7 +46,7 @@ class UrlMatch {
 
   UrlMatch(this.match, this.tail, this.parameters);
 
-  bool operator ==(UrlMatch other) =>
+  bool operator ==(other) =>
     other is UrlMatch &&
     other.match == match &&
     other.tail == tail &&
