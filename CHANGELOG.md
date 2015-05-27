@@ -1,3 +1,14 @@
+# v0.6.2
+
+## Fixes
+
+- correctly include query parameters when using pushState [#95](https://github.com/angular/route.dart/issues/95)
+
+## Features
+
+- allow specifying route page title [#10](https://github.com/angular/route.dart/issues/10)
+
+
 # v0.6.1
 
 ## Features
