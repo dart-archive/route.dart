@@ -50,8 +50,11 @@ class DefaultWindowClickHandler {
     }
     if (anchor.host == _window.location.host) {
       e.preventDefault();
-      _router.gotoUrl(
-          _useFragment ? _normalizer(anchor.hash) : '${anchor.pathname}');
+      if (_useFragment) {
+        _router.gotoUrl(_normalizer(anchor.hash));
+      } else {
+        _router.gotoUrl('${anchor.pathname}${anchor.search}');
+      }
     }
   }
 }
