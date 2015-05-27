@@ -78,18 +78,20 @@ router.root
      path: '/user/:userId',
      mount: (router) =>
        router
-         ..addDefaultRoute(
+         ..addRoute(
              name: 'articleList',
              path: '/acticles',
+             defaultRoute: true,
              enter: showArticlesList)
          ..addRoute(
              name: 'article',
              path: '/article/:articleId',
              mount: (router) =>
                router
-                 ..addDefaultRoute(
+                 ..addRoute(
                      name: 'view',
                      path: '/view',
+                     defaultRoute: true,
                      enter: viewArticle)
                  ..addRoute(
                      name: 'edit',
