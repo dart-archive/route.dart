@@ -207,7 +207,7 @@ class RouteImpl extends Route {
 
   RouteImpl._new({this.name, this.path, this.parent,
                  this.dontLeaveOnParamChanges: false, this.pageTitle,
-                 watchQueryParameters})
+                 List<Pattern> watchQueryParameters})
       : _onEnterController =
             new StreamController<RouteEnterEvent>.broadcast(sync: true),
         _onPreEnterController =
@@ -511,7 +511,7 @@ class Router {
     _logger.finest('route path=$path startingFrom=$startingFrom '
         'forceReload=$forceReload');
     var baseRoute;
-    var trimmedActivePath;
+    List<Route> trimmedActivePath;
     if (startingFrom == null) {
       baseRoute = root;
       trimmedActivePath = activePath;
@@ -522,7 +522,6 @@ class Router {
 
     var treePath = _matchingTreePath(path, baseRoute);
     // Figure out the list of routes that will be leaved
-    var mustLeave = trimmedActivePath;
     var future =
         _preLeave(path, treePath, trimmedActivePath, baseRoute, forceReload);
     _onRouteStart.add(new RouteStartEvent._new(path, future));
@@ -560,7 +559,7 @@ class Router {
       toLeave._onPreLeaveController.add(event);
       preLeaving.addAll(event._allowLeaveFutures);
     });
-    return Future.wait(preLeaving).then((List<bool> results) {
+    return Future.wait(preLeaving).then/*<Future<bool>>*/((List<bool> results) {
       if (!results.any((r) => r == false)) {
         var leaveFn = () => _leave(mustLeave, leaveBase);
         return _preEnter(path, treePath, activePath, baseRoute, leaveFn,
@@ -573,7 +572,7 @@ class Router {
   void _leave(Iterable<Route> mustLeave, Route leaveBase) {
     mustLeave.forEach((toLeave) {
       var event = new RouteLeaveEvent(toLeave);
-      toLeave._onLeaveController.add(event);
+      (toLeave as dynamic)._onLeaveController.add(event);
     });
     if (!mustLeave.isEmpty) {
       _unsetAllCurrentRoutesRecursively(leaveBase);
@@ -614,7 +613,7 @@ class Router {
       matchedRoute.route._onPreEnterController.add(preEnterEvent);
       preEnterFutures.addAll(preEnterEvent._allowEnterFutures);
     });
-    return Future.wait(preEnterFutures).then((List<bool> results) {
+    return Future.wait(preEnterFutures).then/*<Future<bool>>*/((List<bool> results) {
       if (!results.any((v) => v == false)) {
         leaveFn();
         _enter(enterBase, toEnter, tail);
@@ -707,7 +706,7 @@ class Router {
     }
     String reloadPath = '';
     for (int i = path.length - 1; i >= 0; i--) {
-      reloadPath = path[i]._reverse(reloadPath);
+      reloadPath = (path[i] as dynamic)._reverse(reloadPath);
     }
     reloadPath += _buildQuery(path.isEmpty ? {} : path.last.queryParameters);
     return route(reloadPath, startingFrom: startingFrom, forceReload: true);
@@ -737,8 +736,8 @@ class Router {
     var baseRoute = startingFrom == null ? root : _dehandle(startingFrom);
     parameters = parameters == null ? {} : parameters;
     var routeToGo = _findRoute(baseRoute, routePath);
-    var tail = baseRoute._getTailUrl(routeToGo, parameters);
-    return (_useFragment ? '#' : '') + baseRoute._getHead(tail) +
+    var tail = (baseRoute as dynamic)._getTailUrl(routeToGo, parameters);
+    return (_useFragment ? '#' : '') + (baseRoute as dynamic)._getHead(tail) +
         _buildQuery(queryParameters);
   }
 
@@ -775,7 +774,7 @@ class Router {
 
   /// Parse the query string to a parameter `Map`
   Map<String, String> _parseQuery(Route route, String path) {
-    var params = {};
+    var params = <String,String>{};
     if (path.indexOf('?') == -1) return params;
     var queryStr = path.substring(path.indexOf('?') + 1);
     queryStr.split('&').forEach((String keyValPair) {
@@ -893,7 +892,7 @@ class Router {
    */
   List<Route> get activePath {
     var res = <RouteImpl>[];
-    var route = root;
+    dynamic route = root;
     while (route._currentRoute != null) {
       route = route._currentRoute;
       res.add(route);

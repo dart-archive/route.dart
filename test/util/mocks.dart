@@ -5,7 +5,7 @@
 library route.test_mocks;
 
 import 'dart:html';
-import 'package:mock/mock.dart';
+import 'package:mockito/mockito.dart';
 import 'package:route_hierarchical/client.dart';
 
 class MockWindow extends Mock implements Window {
