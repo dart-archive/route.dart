@@ -7,14 +7,13 @@ library route.client_test;
 import 'dart:async';
 import 'dart:html';
 
-import 'package:unittest/unittest.dart';
-import 'package:mock/mock.dart';
+import 'package:test/test.dart';
+import 'package:mockito/mockito.dart';
 import 'package:route_hierarchical/client.dart';
 
 import 'util/mocks.dart';
 
 main() {
-  unittestConfiguration.timeout = new Duration(seconds: 1);
 
   test('paths are routed to routes added with addRoute', () {
     var router = new Router();
@@ -24,7 +23,7 @@ main() {
         enter: expectAsync((RouteEvent e) {
           expect(e.path, '/foo');
           expect(router.root.findRoute('foo').isActive, isTrue);
-        }));
+        }) as RouteEnterEventHandler);
     return router.route('/foo');
   });
 
@@ -39,7 +38,7 @@ main() {
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/foo/bar');
             expect(router.root.findRoute('foobar').isActive, isTrue);
-          }))
+          }) as RouteEnterEventHandler)
         ..addRoute(
           name: 'foo',
           path: '/foo',
@@ -60,7 +59,7 @@ main() {
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/foo/bar');
             expect(router.root.findRoute('foobar').isActive, isTrue);
-          }));
+          }) as RouteEnterEventHandler);
       return router.route('/foo/bar');
     });
 
@@ -77,7 +76,7 @@ main() {
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/foo/bar');
             expect(router.root.findRoute('fooparam').isActive, isTrue);
-          }));
+          }) as RouteEnterEventHandler);
       return router.route('/foo/bar');
     });
 
@@ -90,7 +89,7 @@ main() {
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/foo/address');
             expect(router.root.findRoute('paramaddress').isActive, isTrue);
-          }))
+          }) as RouteEnterEventHandler)
         ..addRoute(
           name: 'param_add',
           path: '/:aaaaaa/add',
@@ -107,7 +106,7 @@ main() {
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/bar/foo');
             expect(router.root.findRoute('fooparam').isActive, isTrue);
-          }))
+          }) as RouteEnterEventHandler)
         ..addRoute(
           name: 'bar',
           path: '/bar',
@@ -128,7 +127,7 @@ main() {
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/bar/foo');
             expect(router.root.findRoute('barfoo').isActive, isTrue);
-          }))
+          }) as RouteEnterEventHandler)
         ;
       return router.route('/bar/foo');
     });
@@ -146,7 +145,7 @@ main() {
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/baz/bar/foo');
             expect(router.root.findRoute('bazbarfoo').isActive, isTrue);
-          }))
+          }) as RouteEnterEventHandler)
         ;
       return router.route('/baz/bar/foo');
     });
@@ -164,7 +163,7 @@ main() {
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/baz/bar/foo');
             expect(router.root.findRoute('bazparamfoo').isActive, isTrue);
-          }))
+          }) as RouteEnterEventHandler)
         ;
       return router.route('/baz/bar/foo');
     });
@@ -182,7 +181,7 @@ main() {
           enter: expectAsync((RouteEvent e) {
             expect(e.path, '/baz/bar/foo');
             expect(router.root.findRoute('param1barfoo').isActive, isTrue);
-          }))
+          }) as RouteEnterEventHandler)
         ;
       return router.route('/baz/bar/foo');
     });
@@ -204,14 +203,14 @@ main() {
             expect(e.path, expectedParentPath);
             expect(e.route, isNotNull);
             expect(e.route.name, 'parent');
-          }),
+          }) as RouteEnterEventHandler,
           mount: (Route child) {
             child.addRoute(
                 name: 'child',
                 path: childPath,
                 enter: expectAsync((RouteEvent e) {
                   expect(e.path, expectedChildPath);
-                }));
+                }) as RouteEnterEventHandler);
           });
       router.route(testPath);
     }
@@ -929,7 +928,7 @@ main() {
             defaultRoute: true,
             enter: expectAsync((RouteEvent e) {
               expect(e.path, expectFoo);
-            }),
+            }) as RouteEnterEventHandler,
             mount: (child) => child
               ..addRoute(
                   name: 'bar',
@@ -1037,7 +1036,7 @@ main() {
 
   group('go', () {
 
-    test('shoud use location.assign/.replace when useFragment=true', () {
+    test('should use location.assign/.replace when useFragment=true', () {
       var mockWindow = new MockWindow();
       var router = new Router(useFragment: true, windowImpl: mockWindow);
       router.root.addRoute(name: 'articles', path: '/articles');
@@ -1045,74 +1044,67 @@ main() {
       router.go('articles', {}).then(expectAsync((_) {
         var mockLocation = mockWindow.location;
 
-        mockLocation.getLogs(callsTo('assign', anything))
-            .verify(happenedExactly(1));
-        expect(mockLocation.getLogs(callsTo('assign', anything)).last.args,
-            ['#/articles']);
-        mockLocation.getLogs(callsTo('replace', anything))
-            .verify(happenedExactly(0));
+        var result = verify(mockLocation.assign(captureAny));
+        result.called(1);
+        expect(result.captured.first, '#/articles');
+        verifyNever(mockLocation.replace(any));
 
         router.go('articles', {}, replace: true).then(expectAsync((_) {
-          mockLocation.getLogs(callsTo('replace', anything))
-              .verify(happenedExactly(1));
-          expect(mockLocation.getLogs(callsTo('replace', anything)).last.args,
-              ['#/articles']);
-          mockLocation.getLogs(callsTo('assign', anything))
-              .verify(happenedExactly(1));
+          var result = verify(mockLocation.replace(captureAny));
+          result.called(1);
+          expect(result.captured.first, '#/articles');
+          verifyNever(mockLocation.assign(any));
         }));
       }));
     });
 
-    test('shoud use history.push/.replaceState when useFragment=false', () {
+    test('should use history.push/.replaceState when useFragment=false', () {
       var mockWindow = new MockWindow();
       var router = new Router(useFragment: false, windowImpl: mockWindow);
       router.root.addRoute(name: 'articles', path: '/articles');
-      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
+      when((mockWindow.document as HtmlDocument).title)
+          .thenReturn('page title');
 
       router.go('articles', {}).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
 
-        mockHistory.getLogs(callsTo('pushState', anything))
-            .verify(happenedExactly(1));
-        expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-            [null, 'page title', '/articles']);
-        mockHistory.getLogs(callsTo('replaceState', anything))
-            .verify(happenedExactly(0));
+        var result = verify(mockHistory.pushState(captureAny, captureAny, captureAny));
+        result.called(1);
+        expect(result.captured, [null, 'page title', '/articles']);
+        verifyNever(mockHistory.replaceState(any, any, any));
 
         router.go('articles', {}, replace: true).then(expectAsync((_) {
-          mockHistory.getLogs(callsTo('replaceState', anything))
-              .verify(happenedExactly(1));
-          expect(mockHistory.getLogs(callsTo('replaceState', anything)).last.args,
-              [null, 'page title', '/articles']);
-          mockHistory.getLogs(callsTo('pushState', anything))
-              .verify(happenedExactly(1));
+          var result = verify(mockHistory.replaceState(captureAny, captureAny, captureAny));
+          result.called(1);
+          expect(result.captured, [null, 'page title', '/articles']);
+          verifyNever(mockHistory.pushState(any, any, any));
         }));
       }));
     });
 
-    test('shoud encode query parameters in the URL', () {
+    test('should encode query parameters in the URL', () {
       var mockWindow = new MockWindow();
       var router = new Router(useFragment: false, windowImpl: mockWindow);
       router.root.addRoute(name: 'articles', path: '/articles');
-      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
+      when((mockWindow.document as HtmlDocument).title)
+          .thenReturn('page title');
 
       var queryParams = {'foo': 'foo bar', 'bar': '%baz+aux'};
       router.go('articles', {},
           queryParameters: queryParams).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
 
-        mockHistory.getLogs(callsTo('pushState', anything))
-            .verify(happenedExactly(1));
-        expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-            [null, 'page title', '/articles?foo=foo%20bar&bar=%25baz%2Baux']);
-        mockHistory.getLogs(callsTo('replaceState', anything))
-            .verify(happenedExactly(0));
+        var result = verify(mockHistory.pushState(captureAny, captureAny, captureAny));
+        result.called(1);
+        expect(result.captured, [null, 'page title', '/articles?foo=foo%20bar&bar=%25baz%2Baux']);
+        verifyNever(mockHistory.replaceState(any, any, any));
       }));
     });
 
     test('should work with hierarchical go', () {
       var mockWindow = new MockWindow();
-      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
+      when((mockWindow.document as HtmlDocument).title)
+          .thenReturn('page title');
       var router = new Router(windowImpl: mockWindow);
       router.root
         ..addRoute(
@@ -1128,24 +1120,22 @@ main() {
       router.go('a.b', {}).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
 
-        mockHistory.getLogs(callsTo('pushState', anything))
-            .verify(happenedExactly(1));
-        expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-            [null, 'page title', '/null/null']);
+        var result = verify(mockHistory.pushState(captureAny, captureAny, captureAny));
+        result.called(1);
+        expect(result.captured, [null, 'page title', '/null/null']);
 
         router.go('a.b', {'foo': 'aaaa', 'bar': 'bbbb'}).then(expectAsync((_) {
-          mockHistory.getLogs(callsTo('pushState', anything))
-              .verify(happenedExactly(2));
-          expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-              [null, 'page title', '/aaaa/bbbb']);
+          var result = verify(mockHistory.pushState(captureAny, captureAny, captureAny));
+          result .called(1);
+          expect(result.captured, [null, 'page title', '/aaaa/bbbb']);
 
           router.go('b', {'bar': 'bbbb'}, startingFrom: routeA)
               .then(expectAsync((_) {
-                mockHistory.getLogs(callsTo('pushState', anything))
-                   .verify(happenedExactly(3));
-                expect(
-                    mockHistory.getLogs(callsTo('pushState')).last.args,
-                    [null, 'page title', '/aaaa/bbbb']);
+                var result = verify(mockHistory.pushState(captureAny, captureAny, captureAny));
+                // Note: These were cumulative with mock but get reset with each
+                // call to mockito.verify(), so 3 became 1 here.
+                result.called(1);
+                expect(result.captured, [null, 'page title', '/aaaa/bbbb']);
               }));
         }));
       }));
@@ -1159,7 +1149,9 @@ main() {
       };
 
       var mockWindow = new MockWindow();
-      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
+
+      when((mockWindow.document as HtmlDocument).title)
+          .thenReturn('page title');
       var router = new Router(windowImpl: mockWindow);
       router.root
         ..addRoute(
@@ -1189,10 +1181,10 @@ main() {
         return router.go('b', {'bar': 'bbb'}, startingFrom: routeA).then((_) {
           var mockHistory = mockWindow.history;
 
-          mockHistory.getLogs(callsTo('pushState', anything))
-             .verify(happenedExactly(1));
-          expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-              [null, 'page title', '/null/bbb']);
+          var result = verify(mockHistory.pushState(captureAny, captureAny,
+              captureAny));
+          result.called(1);
+          expect(result.captured, [null, 'page title', '/null/bbb']);
         });
       });
     });
@@ -1204,7 +1196,8 @@ main() {
       };
 
       var mockWindow = new MockWindow();
-      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
+      when((mockWindow.document as HtmlDocument).title)
+          .thenReturn('page title');
       var router = new Router(windowImpl: mockWindow);
       router.root
         ..addRoute(
@@ -1250,22 +1243,21 @@ main() {
 
       router.go('foo', {}).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
-        mockWindow.document.getLogs(callsTo('set title')).verify(happenedOnce);
-        expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-            [null, 'Foo', '/foo']);
+        verify((mockWindow.document as HtmlDocument).title=any).called(1);
+        verify(mockHistory.pushState(null, 'Foo', '/foo')).called(1);
       }));
     });
 
     test('should not change page title if the title property is not set', () {
       var mockWindow = new MockWindow();
-      mockWindow.document.when(callsTo('get title')).alwaysReturn('page title');
+      when((mockWindow.document as HtmlDocument).title)
+          .thenReturn('page title');
       var router = new Router(useFragment: false, windowImpl: mockWindow);
       router.root.addRoute(name: 'foo', path: '/foo');
 
       router.go('foo', {}).then(expectAsync((_) {
         var mockHistory = mockWindow.history;
-        expect(mockHistory.getLogs(callsTo('pushState', anything)).last.args,
-            [null, 'page title', '/foo']);
+        verify(mockHistory.pushState(null, 'page title', '/foo')).called(1);
       }));
     });
 
@@ -1374,7 +1366,7 @@ main() {
                   'b': '',
                   'c': 'foo bar'
                 });
-              }));
+              }) as RouteEnterEventHandler);
 
         router.route('/123?a=b&b=&c=foo%20bar');
       });
@@ -1698,9 +1690,8 @@ main() {
         var mockWindow = new MockWindow();
         var mockHashChangeController = new StreamController<Event>(sync: true);
 
-        mockWindow.when(callsTo('get onHashChange'))
-            .alwaysReturn(mockHashChangeController.stream);
-        mockWindow.location.when(callsTo('get hash')).alwaysReturn('#/foo');
+        when(mockWindow.onHashChange).thenReturn(mockHashChangeController.stream);
+        when(mockWindow.location.hash).thenReturn('#/foo');
         var router = new Router(useFragment: true, windowImpl: mockWindow);
         router.root.addRoute(name: 'foo', path: '/foo');
         router.onRouteStart.listen(expectAsync((RouteStartEvent start) {
@@ -1716,9 +1707,9 @@ main() {
     group('pushState', () {
 
       testInit(mockWindow, [count = 1]) {
-        mockWindow.location.when(callsTo('get hash')).alwaysReturn('');
-        mockWindow.location.when(callsTo('get pathname')).alwaysReturn('/hello');
-        mockWindow.location.when(callsTo('get search')).alwaysReturn('?foo=bar&baz=bat');
+        when(mockWindow.location.hash).thenReturn('');
+        when(mockWindow.location.pathname).thenReturn('/hello');
+        when(mockWindow.location.search).thenReturn('?foo=bar&baz=bat');
         var router = new Router(useFragment: false, windowImpl: mockWindow);
         router.root.addRoute(name: 'hello', path: '/hello');
         router.onRouteStart.listen(expectAsync((RouteStartEvent start) {
@@ -1734,8 +1725,7 @@ main() {
       test('shoud route current path on listen with pop', () {
         var mockWindow = new MockWindow();
         var mockPopStateController = new StreamController<Event>(sync: true);
-        mockWindow.when(callsTo('get onPopState'))
-            .alwaysReturn(mockPopStateController.stream);
+        when(mockWindow.onPopState).thenReturn(mockPopStateController.stream);
         testInit(mockWindow, 2);
         mockPopStateController.add(null);
       });
@@ -1743,8 +1733,7 @@ main() {
       test('shoud route current path on listen without pop', () {
         var mockWindow = new MockWindow();
         var mockPopStateController = new StreamController<Event>(sync: true);
-        mockWindow.when(callsTo('get onPopState'))
-            .alwaysReturn(mockPopStateController.stream);
+        when(mockWindow.onPopState).thenReturn(mockPopStateController.stream);
         testInit(mockWindow);
       });
 
@@ -1769,10 +1758,9 @@ main() {
         var mockWindow = new MockWindow();
         var mockHashChangeController = new StreamController<Event>(sync: true);
 
-        mockWindow.when(callsTo('get onHashChange'))
-            .alwaysReturn(mockHashChangeController.stream);
-        mockWindow.location.when(callsTo('get hash')).alwaysReturn('#/foo');
-        mockWindow.location.when(callsTo('get host')).alwaysReturn(window.location.host);
+        when(mockWindow.onHashChange).thenReturn(mockHashChangeController.stream);
+        when(mockWindow.location.hash).thenReturn('#/foo');
+        when(mockWindow.location.host).thenReturn(window.location.host);
 
         var router = new Router(useFragment: true, windowImpl: mockWindow);
         router.listen(appRoot: anchor);
@@ -1794,10 +1782,9 @@ main() {
         var mockWindow = new MockWindow();
         var mockHashChangeController = new StreamController<Event>(sync: true);
 
-        mockWindow.when(callsTo('get onHashChange'))
-            .alwaysReturn(mockHashChangeController.stream);
-        mockWindow.location.when(callsTo('get hash')).alwaysReturn('#/foo');
-        mockWindow.location.when(callsTo('get host')).alwaysReturn(window.location.host);
+        when(mockWindow.onHashChange).thenReturn(mockHashChangeController.stream);
+        when(mockWindow.location.hash).thenReturn('#/foo');
+        when(mockWindow.location.host).thenReturn(window.location.host);
 
         var router = new Router(useFragment: true, windowImpl: mockWindow);
         router.listen(appRoot: anchor);

@@ -1,7 +1,7 @@
 library route.link_matcher_test;
 
 import 'dart:html';
-import 'package:unittest/unittest.dart';
+import 'package:test/test.dart';
 import 'package:route_hierarchical/link_matcher.dart';
 
 main() {

@@ -1,3 +1,15 @@
+# v0.6.3
+
+## Breaking changes
+
+- UrlPattern has been removed. It was deprecated in v0.6.2.
+- package:unittest replaced by package:test
+- package:mock replaced by package:mockito
+
+## Fixes
+
+- Strong-mode analysis is clean (except some warnings in unit tests)
+
 # v0.6.2
 
 ## Fixes
